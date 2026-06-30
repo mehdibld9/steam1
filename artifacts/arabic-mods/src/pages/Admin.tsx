@@ -1,98 +1,130 @@
 import { Header } from "@/components/layout/Header"
 import { useState, useEffect } from "react"
-import { useVerifyAdmin, useListMods, useDeleteMod, useCreateMod, useUpdateMod, useGetStats, getListModsQueryKey, getGetStatsQueryKey } from "@workspace/api-client-react"
+import {
+  useVerifyAdmin, useListMods, useDeleteMod, useCreateMod, useUpdateMod,
+  useGetStats, getListModsQueryKey, getGetStatsQueryKey
+} from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQueryClient } from "@tanstack/react-query"
-import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye } from "lucide-react"
-import type { Mod, ModInput, ModUpdate } from "@workspace/api-client-react"
+import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus } from "lucide-react"
+import type { Mod } from "@workspace/api-client-react"
 import { Link } from "wouter"
+
+interface FormData {
+  title: string
+  gameName: string
+  description: string
+  imageUrl: string
+  extraImages: string[]
+  download1Label: string
+  download1Url: string
+  download2Label: string
+  download2Url: string
+}
+
+const EMPTY_FORM: FormData = {
+  title: "",
+  gameName: "",
+  description: "",
+  imageUrl: "",
+  extraImages: [],
+  download1Label: "",
+  download1Url: "",
+  download2Label: "",
+  download2Url: "",
+}
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
-  const [view, setView] = useState<'list' | 'form'>('list')
+  const [view, setView] = useState<"list" | "form">("list")
   const [editingMod, setEditingMod] = useState<Mod | null>(null)
-  
-  const adminRequestOptions = { headers: { 'x-admin-password': password } };
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
+  const [newExtraImageUrl, setNewExtraImageUrl] = useState("")
+
+  const adminHeaders = { headers: { "x-admin-username": username, "x-admin-password": password } }
 
   const verifyAdmin = useVerifyAdmin()
-  const { data: mods, isLoading: isModsLoading } = useListMods({ query: { enabled: isAuthenticated, queryKey: getListModsQueryKey() } })
-  const { data: stats } = useGetStats({ 
-    query: { enabled: isAuthenticated, queryKey: getGetStatsQueryKey() },
-    request: adminRequestOptions
+  const { data: mods, isLoading: isModsLoading } = useListMods({
+    query: { enabled: isAuthenticated, queryKey: getListModsQueryKey() }
   })
-  const deleteMod = useDeleteMod({ request: adminRequestOptions })
-  const createMod = useCreateMod({ request: adminRequestOptions })
-  const updateMod = useUpdateMod({ request: adminRequestOptions })
+  const { data: stats } = useGetStats({
+    query: { enabled: isAuthenticated, queryKey: getGetStatsQueryKey() },
+    request: adminHeaders,
+  })
+  const deleteMod = useDeleteMod({ request: adminHeaders })
+  const createMod = useCreateMod({ request: adminHeaders })
+  const updateMod = useUpdateMod({ request: adminHeaders })
   const queryClient = useQueryClient()
 
-  // Form state
-  const [formData, setFormData] = useState<ModInput>({
-    title: "",
-    gameName: "",
-    description: "",
-    imageUrl: "",
-    download1Label: "",
-    download1Url: "",
-    download2Label: "",
-    download2Url: ""
-  })
-
+  // Auto-login from localStorage
   useEffect(() => {
-    const savedPassword = localStorage.getItem('adminPassword')
-    if (savedPassword) {
-      setPassword(savedPassword)
-      verifyAdmin.mutate({ data: { password: savedPassword } }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            setIsAuthenticated(true)
-          } else {
-            localStorage.removeItem('adminPassword')
-            setPassword("")
-          }
+    const savedUser = localStorage.getItem("adminUsername")
+    const savedPass = localStorage.getItem("adminPassword")
+    if (savedUser && savedPass) {
+      setUsername(savedUser)
+      setPassword(savedPass)
+      verifyAdmin.mutate(
+        { data: { username: savedUser, password: savedPass } },
+        {
+          onSuccess: (res) => {
+            if (res.success) {
+              setIsAuthenticated(true)
+            } else {
+              localStorage.removeItem("adminUsername")
+              localStorage.removeItem("adminPassword")
+            }
+          },
         }
-      })
+      )
     }
   }, [])
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    verifyAdmin.mutate({ data: { password } }, {
-      onSuccess: (res) => {
-        if (res.success) {
-          setIsAuthenticated(true)
-          localStorage.setItem('adminPassword', password)
-          setError("")
-        } else {
-          setError("كلمة المرور غير صحيحة")
-        }
-      },
-      onError: () => {
-        setError("حدث خطأ أثناء تسجيل الدخول")
+    verifyAdmin.mutate(
+      { data: { username, password } },
+      {
+        onSuccess: (res) => {
+          if (res.success) {
+            setIsAuthenticated(true)
+            localStorage.setItem("adminUsername", username)
+            localStorage.setItem("adminPassword", password)
+            setError("")
+          } else {
+            setError("بيانات الدخول غير صحيحة")
+          }
+        },
+        onError: () => setError("حدث خطأ أثناء تسجيل الدخول"),
       }
-    })
+    )
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('adminPassword')
+    localStorage.removeItem("adminUsername")
+    localStorage.removeItem("adminPassword")
     setIsAuthenticated(false)
+    setUsername("")
     setPassword("")
   }
 
   const handleDelete = (id: number) => {
-    if (confirm("هل أنت متأكد من حذف هذا التعريب؟")) {
-      deleteMod.mutate({ id }, {
+    if (!confirm("هل أنت متأكد من حذف هذا التعريب؟")) return
+    deleteMod.mutate(
+      { id },
+      {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
           queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() })
-        }
-      })
-    }
+        },
+      }
+    )
   }
 
   const openForm = (mod?: Mod) => {
@@ -101,50 +133,71 @@ export default function Admin() {
       setFormData({
         title: mod.title,
         gameName: mod.gameName,
-        description: mod.description || "",
-        imageUrl: mod.imageUrl || "",
-        download1Label: mod.download1Label || "",
-        download1Url: mod.download1Url || "",
-        download2Label: mod.download2Label || "",
-        download2Url: mod.download2Url || ""
+        description: mod.description ?? "",
+        imageUrl: mod.imageUrl ?? "",
+        extraImages: Array.isArray(mod.extraImages) ? mod.extraImages : [],
+        download1Label: mod.download1Label ?? "",
+        download1Url: mod.download1Url ?? "",
+        download2Label: mod.download2Label ?? "",
+        download2Url: mod.download2Url ?? "",
       })
     } else {
       setEditingMod(null)
-      setFormData({
-        title: "",
-        gameName: "",
-        description: "",
-        imageUrl: "",
-        download1Label: "",
-        download1Url: "",
-        download2Label: "",
-        download2Url: ""
-      })
+      setFormData(EMPTY_FORM)
     }
-    setView('form')
+    setNewExtraImageUrl("")
+    setView("form")
+  }
+
+  const addExtraImage = () => {
+    const url = newExtraImageUrl.trim()
+    if (!url) return
+    setFormData((f) => ({ ...f, extraImages: [...f.extraImages, url] }))
+    setNewExtraImageUrl("")
+  }
+
+  const removeExtraImage = (idx: number) => {
+    setFormData((f) => ({ ...f, extraImages: f.extraImages.filter((_, i) => i !== idx) }))
   }
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
+    const payload = {
+      title: formData.title,
+      gameName: formData.gameName,
+      description: formData.description || undefined,
+      imageUrl: formData.imageUrl || undefined,
+      extraImages: formData.extraImages,
+      download1Label: formData.download1Label || undefined,
+      download1Url: formData.download1Url || undefined,
+      download2Label: formData.download2Label || undefined,
+      download2Url: formData.download2Url || undefined,
+    }
     if (editingMod) {
-      updateMod.mutate({ id: editingMod.id, data: formData }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
-          setView('list')
+      updateMod.mutate(
+        { id: editingMod.id, data: payload },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
+            setView("list")
+          },
         }
-      })
+      )
     } else {
-      createMod.mutate({ data: formData }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
-          queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() })
-          setView('list')
+      createMod.mutate(
+        { data: payload },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
+            queryClient.invalidateQueries({ queryKey: getGetStatsQueryKey() })
+            setView("list")
+          },
         }
-      })
+      )
     }
   }
 
+  // ─── Login screen ────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="min-h-[100dvh] flex flex-col bg-background" dir="rtl">
@@ -157,6 +210,19 @@ export default function Admin() {
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="username">اسم المستخدم</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    dir="ltr"
+                    required
+                    autoComplete="username"
+                    className="focus-visible:ring-primary font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="password">كلمة المرور</Label>
                   <Input
                     id="password"
@@ -165,17 +231,12 @@ export default function Admin() {
                     onChange={(e) => setPassword(e.target.value)}
                     dir="ltr"
                     required
-                    className="focus-visible:ring-primary text-center tracking-widest font-mono text-lg py-6"
-                    data-testid="input-admin-password"
+                    autoComplete="current-password"
+                    className="focus-visible:ring-primary font-mono"
                   />
                 </div>
                 {error && <p className="text-sm text-destructive font-bold">{error}</p>}
-                <Button 
-                  type="submit" 
-                  className="w-full py-6 text-lg" 
-                  disabled={verifyAdmin.isPending}
-                  data-testid="btn-admin-login"
-                >
+                <Button type="submit" className="w-full py-6 text-lg" disabled={verifyAdmin.isPending}>
                   {verifyAdmin.isPending ? "جاري التحقق..." : "دخول"}
                 </Button>
               </form>
@@ -186,68 +247,66 @@ export default function Admin() {
     )
   }
 
+  // ─── Dashboard ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background" dir="rtl">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
+
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">لوحة التحكم</h1>
             <p className="text-muted-foreground">إدارة التعريبات والمحتوى</p>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20" data-testid="btn-admin-logout">
+          <Button variant="outline" onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20">
             <LogOut className="w-4 h-4 ml-2" />
             تسجيل الخروج
           </Button>
         </div>
 
-        {view === 'list' ? (
+        {view === "list" ? (
           <>
+            {/* Stats */}
             {stats && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <Card className="bg-card/50 border-primary/20">
                   <CardContent className="p-6 flex items-center gap-4">
-                    <div className="p-4 rounded-full bg-primary/10 text-primary">
-                      <Gamepad2 className="w-6 h-6" />
-                    </div>
+                    <div className="p-4 rounded-full bg-primary/10 text-primary"><Gamepad2 className="w-6 h-6" /></div>
                     <div>
                       <p className="text-sm text-muted-foreground font-medium mb-1">إجمالي التعريبات</p>
-                      <p className="text-3xl font-bold font-mono text-foreground">{stats.totalMods}</p>
+                      <p className="text-3xl font-bold font-mono">{stats.totalMods}</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="bg-card/50 border-border">
                   <CardContent className="p-6 flex items-center gap-4">
-                    <div className="p-4 rounded-full bg-secondary text-muted-foreground">
-                      <Download className="w-6 h-6" />
-                    </div>
+                    <div className="p-4 rounded-full bg-secondary text-muted-foreground"><Download className="w-6 h-6" /></div>
                     <div>
                       <p className="text-sm text-muted-foreground font-medium mb-1">إجمالي التحميلات</p>
-                      <p className="text-3xl font-bold font-mono text-foreground">{stats.totalDownloads}</p>
+                      <p className="text-3xl font-bold font-mono">{stats.totalDownloads.toLocaleString()}</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card className="bg-card/50 border-border">
                   <CardContent className="p-6 flex items-center gap-4">
-                    <div className="p-4 rounded-full bg-secondary text-muted-foreground">
-                      <Eye className="w-6 h-6" />
-                    </div>
+                    <div className="p-4 rounded-full bg-secondary text-muted-foreground"><Eye className="w-6 h-6" /></div>
                     <div>
                       <p className="text-sm text-muted-foreground font-medium mb-1">إجمالي المشاهدات</p>
-                      <p className="text-3xl font-bold font-mono text-foreground">{stats.totalViews}</p>
+                      <p className="text-3xl font-bold font-mono">{stats.totalViews.toLocaleString()}</p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             )}
 
+            {/* Mods table */}
             <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
                 <h2 className="font-bold text-lg flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-primary" />
                   قائمة التعريبات
                 </h2>
-                <Button onClick={() => openForm()} data-testid="btn-admin-add-mod">
+                <Button onClick={() => openForm()}>
                   <Plus className="w-4 h-4 ml-2" />
                   إضافة تعريب
                 </Button>
@@ -260,54 +319,33 @@ export default function Admin() {
                       <th className="px-6 py-4 font-medium">التعريب</th>
                       <th className="px-6 py-4 font-medium">اللعبة</th>
                       <th className="px-6 py-4 font-medium w-24 text-center">التحميلات</th>
+                      <th className="px-6 py-4 font-medium w-24 text-center">المشاهدات</th>
                       <th className="px-6 py-4 font-medium w-32">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {isModsLoading ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">جاري التحميل...</td>
-                      </tr>
+                      <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">جاري التحميل...</td></tr>
                     ) : mods?.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">لا توجد تعريبات مضافة.</td>
-                      </tr>
+                      <tr><td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">لا توجد تعريبات مضافة.</td></tr>
                     ) : (
                       mods?.map((mod) => (
                         <tr key={mod.id} className="hover:bg-secondary/20 transition-colors">
                           <td className="px-6 py-4 font-mono text-center text-muted-foreground">{mod.id}</td>
                           <td className="px-6 py-4 font-bold">
-                            <Link href={`/mod/${mod.id}`} className="hover:text-primary transition-colors">
-                              {mod.title}
-                            </Link>
+                            <Link href={`/mod/${mod.id}`} className="hover:text-primary transition-colors">{mod.title}</Link>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-xs font-bold px-2 py-1 bg-secondary rounded text-primary uppercase tracking-wider">
-                              {mod.gameName}
-                            </span>
+                            <span className="text-xs font-bold px-2 py-1 bg-secondary rounded text-primary uppercase tracking-wider">{mod.gameName}</span>
                           </td>
-                          <td className="px-6 py-4 font-mono text-center text-muted-foreground">{mod.downloadCount}</td>
+                          <td className="px-6 py-4 font-mono text-center text-muted-foreground">{mod.downloadCount.toLocaleString()}</td>
+                          <td className="px-6 py-4 font-mono text-center text-muted-foreground">{mod.viewCount.toLocaleString()}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => openForm(mod)}
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                                title="تعديل"
-                                data-testid={`btn-edit-mod-${mod.id}`}
-                              >
+                              <Button variant="ghost" size="icon" onClick={() => openForm(mod)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary" title="تعديل">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleDelete(mod.id)}
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                title="حذف"
-                                disabled={deleteMod.isPending}
-                                data-testid={`btn-delete-mod-${mod.id}`}
-                              >
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(mod.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="حذف" disabled={deleteMod.isPending}>
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -321,80 +359,90 @@ export default function Admin() {
             </div>
           </>
         ) : (
+          // ─── Form ─────────────────────────────────────────────────────────────
           <div className="max-w-3xl mx-auto">
-            <Button 
-              variant="ghost" 
-              onClick={() => setView('list')} 
-              className="mb-6 hover:bg-transparent hover:text-primary pl-0"
-            >
+            <Button variant="ghost" onClick={() => setView("list")} className="mb-6 hover:bg-transparent hover:text-primary pl-0">
               <ArrowRight className="w-4 h-4 ml-2" />
               العودة للقائمة
             </Button>
-            
             <Card className="border-border">
               <CardHeader className="bg-secondary/20 border-b border-border">
-                <CardTitle className="text-xl">
-                  {editingMod ? "تعديل التعريب" : "إضافة تعريب جديد"}
-                </CardTitle>
+                <CardTitle className="text-xl">{editingMod ? "تعديل التعريب" : "إضافة تعريب جديد"}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={handleFormSubmit} className="space-y-6">
+
+                  {/* Title + Game */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="title" className="text-primary font-bold">اسم التعريب *</Label>
-                      <Input
-                        id="title"
-                        required
-                        value={formData.title}
-                        onChange={(e) => setFormData({...formData, title: e.target.value})}
-                        className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary"
-                        data-testid="input-mod-title"
-                      />
+                      <Input id="title" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gameName" className="text-primary font-bold">اسم اللعبة بالإنجليزية *</Label>
-                      <Input
-                        id="gameName"
-                        required
-                        value={formData.gameName}
-                        onChange={(e) => setFormData({...formData, gameName: e.target.value})}
-                        dir="ltr"
-                        className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary uppercase text-sm font-bold tracking-widest text-left"
-                        data-testid="input-mod-gamename"
-                      />
+                      <Input id="gameName" required value={formData.gameName} onChange={(e) => setFormData({ ...formData, gameName: e.target.value })} dir="ltr" className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary uppercase text-sm font-bold tracking-widest text-left" />
                     </div>
                   </div>
-                  
+
+                  {/* Cover image */}
                   <div className="space-y-2">
                     <Label htmlFor="imageUrl" className="font-bold">رابط صورة الغلاف</Label>
-                    <Input
-                      id="imageUrl"
-                      type="url"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                      dir="ltr"
-                      className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary text-left"
-                      placeholder="https://..."
-                      data-testid="input-mod-image"
-                    />
+                    <Input id="imageUrl" type="url" value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} dir="ltr" className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary text-left" placeholder="https://..." />
                     {formData.imageUrl && (
                       <div className="mt-2 h-32 w-full md:w-64 rounded-md overflow-hidden border border-border">
-                        <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                        <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
                       </div>
                     )}
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="font-bold">الوصف</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="min-h-[150px] bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary resize-y"
-                      data-testid="input-mod-description"
-                    />
+
+                  {/* Extra images */}
+                  <div className="space-y-3">
+                    <Label className="font-bold flex items-center gap-2">
+                      <ImagePlus className="w-4 h-4 text-primary" />
+                      صور إضافية (معرض الصور)
+                    </Label>
+                    <div className="bg-secondary/20 p-4 rounded-lg border border-border space-y-3">
+                      {/* Existing extra images */}
+                      {formData.extraImages.map((url, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="w-12 h-9 rounded overflow-hidden border border-border flex-shrink-0">
+                            <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                          </div>
+                          <Input value={url} onChange={(e) => {
+                            const imgs = [...formData.extraImages]
+                            imgs[idx] = e.target.value
+                            setFormData({ ...formData, extraImages: imgs })
+                          }} dir="ltr" className="bg-background text-left text-xs flex-1 h-8" />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeExtraImage(idx)} className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      {/* Add new */}
+                      <div className="flex gap-2">
+                        <Input
+                          type="url"
+                          value={newExtraImageUrl}
+                          onChange={(e) => setNewExtraImageUrl(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExtraImage() } }}
+                          dir="ltr"
+                          placeholder="https://... (اضغط Enter أو +)"
+                          className="bg-background text-left text-sm h-9"
+                        />
+                        <Button type="button" variant="outline" size="sm" onClick={addExtraImage} className="flex-shrink-0 h-9">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="font-bold">الوصف</Label>
+                    <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[150px] bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary resize-y" />
+                  </div>
+
+                  {/* Download links */}
                   <div className="border-t border-border pt-6 mt-6">
                     <h3 className="font-bold mb-4 flex items-center gap-2">
                       <Download className="w-4 h-4 text-primary" />
@@ -404,65 +452,29 @@ export default function Admin() {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="download1Label">الزر الأول - النص</Label>
-                          <Input
-                            id="download1Label"
-                            value={formData.download1Label}
-                            onChange={(e) => setFormData({...formData, download1Label: e.target.value})}
-                            placeholder="تحميل مباشر"
-                            className="bg-background"
-                          />
+                          <Input id="download1Label" value={formData.download1Label} onChange={(e) => setFormData({ ...formData, download1Label: e.target.value })} placeholder="تحميل مباشر" className="bg-background" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="download1Url">الزر الأول - الرابط</Label>
-                          <Input
-                            id="download1Url"
-                            type="url"
-                            value={formData.download1Url}
-                            onChange={(e) => setFormData({...formData, download1Url: e.target.value})}
-                            dir="ltr"
-                            placeholder="https://..."
-                            className="bg-background text-left"
-                          />
+                          <Input id="download1Url" type="url" value={formData.download1Url} onChange={(e) => setFormData({ ...formData, download1Url: e.target.value })} dir="ltr" placeholder="https://..." className="bg-background text-left" />
                         </div>
                       </div>
-                      
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="download2Label">الزر الثاني - النص</Label>
-                          <Input
-                            id="download2Label"
-                            value={formData.download2Label}
-                            onChange={(e) => setFormData({...formData, download2Label: e.target.value})}
-                            placeholder="رابط بديل"
-                            className="bg-background"
-                          />
+                          <Input id="download2Label" value={formData.download2Label} onChange={(e) => setFormData({ ...formData, download2Label: e.target.value })} placeholder="رابط بديل" className="bg-background" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="download2Url">الزر الثاني - الرابط</Label>
-                          <Input
-                            id="download2Url"
-                            type="url"
-                            value={formData.download2Url}
-                            onChange={(e) => setFormData({...formData, download2Url: e.target.value})}
-                            dir="ltr"
-                            placeholder="https://..."
-                            className="bg-background text-left"
-                          />
+                          <Input id="download2Url" type="url" value={formData.download2Url} onChange={(e) => setFormData({ ...formData, download2Url: e.target.value })} dir="ltr" placeholder="https://..." className="bg-background text-left" />
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-end gap-4 pt-6 border-t border-border">
-                    <Button type="button" variant="outline" onClick={() => setView('list')}>
-                      إلغاء
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createMod.isPending || updateMod.isPending}
-                      className="px-8"
-                      data-testid="btn-mod-submit"
-                    >
+                    <Button type="button" variant="outline" onClick={() => setView("list")}>إلغاء</Button>
+                    <Button type="submit" disabled={createMod.isPending || updateMod.isPending} className="px-8">
                       {createMod.isPending || updateMod.isPending ? "جاري الحفظ..." : "حفظ التعريب"}
                     </Button>
                   </div>

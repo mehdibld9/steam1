@@ -13,9 +13,6 @@ export function Header() {
           <Link href="/" className="transition-colors hover:text-primary">
             الرئيسية
           </Link>
-          <Link href="/admin" className="transition-colors hover:text-primary">
-            لوحة التحكم
-          </Link>
         </nav>
       </div>
     </header>

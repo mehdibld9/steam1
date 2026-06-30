@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -26,6 +25,7 @@ export const ListModsResponseItem = zod.object({
   "gameName": zod.string(),
   "description": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "extraImages": zod.array(zod.string()).nullish(),
   "downloadCount": zod.number(),
   "viewCount": zod.number(),
   "download1Label": zod.string().nullish(),
@@ -50,6 +50,7 @@ export const CreateModBody = zod.object({
   "gameName": zod.string().min(1),
   "description": zod.string().optional(),
   "imageUrl": zod.string().optional(),
+  "extraImages": zod.array(zod.string()).optional(),
   "download1Label": zod.string().optional(),
   "download1Url": zod.string().optional(),
   "download2Label": zod.string().optional(),
@@ -62,6 +63,7 @@ export const CreateModResponse = zod.object({
   "gameName": zod.string(),
   "description": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "extraImages": zod.array(zod.string()).nullish(),
   "downloadCount": zod.number(),
   "viewCount": zod.number(),
   "download1Label": zod.string().nullish(),
@@ -86,6 +88,7 @@ export const GetModResponse = zod.object({
   "gameName": zod.string(),
   "description": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "extraImages": zod.array(zod.string()).nullish(),
   "downloadCount": zod.number(),
   "viewCount": zod.number(),
   "download1Label": zod.string().nullish(),
@@ -113,6 +116,7 @@ export const UpdateModBody = zod.object({
   "gameName": zod.string().min(1).optional(),
   "description": zod.string().optional(),
   "imageUrl": zod.string().optional(),
+  "extraImages": zod.array(zod.string()).optional(),
   "download1Label": zod.string().optional(),
   "download1Url": zod.string().optional(),
   "download2Label": zod.string().optional(),
@@ -125,6 +129,7 @@ export const UpdateModResponse = zod.object({
   "gameName": zod.string(),
   "description": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "extraImages": zod.array(zod.string()).nullish(),
   "downloadCount": zod.number(),
   "viewCount": zod.number(),
   "download1Label": zod.string().nullish(),
@@ -159,6 +164,7 @@ export const TrackDownloadResponse = zod.object({
   "gameName": zod.string(),
   "description": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "extraImages": zod.array(zod.string()).nullish(),
   "downloadCount": zod.number(),
   "viewCount": zod.number(),
   "download1Label": zod.string().nullish(),
@@ -171,9 +177,10 @@ export const TrackDownloadResponse = zod.object({
 
 
 /**
- * @summary Verify admin password
+ * @summary Verify admin username and password
  */
 export const VerifyAdminBody = zod.object({
+  "username": zod.string(),
   "password": zod.string()
 })
 

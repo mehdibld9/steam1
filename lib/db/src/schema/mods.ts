@@ -8,6 +8,7 @@ export const modsTable = pgTable("mods", {
   gameName: text("game_name").notNull(),
   description: text("description"),
   imageUrl: text("image_url"),
+  extraImages: text("extra_images"), // JSON-encoded string[]
   downloadCount: integer("download_count").notNull().default(0),
   viewCount: integer("view_count").notNull().default(0),
   download1Label: text("download1_label"),

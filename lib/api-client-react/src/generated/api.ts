@@ -65,7 +65,6 @@ export const getHealthCheckUrl = () => {
 }
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const healthCheck = async ( options?: RequestInit): Promise<HealthStatus> => {
@@ -578,7 +577,7 @@ export const getVerifyAdminUrl = () => {
 }
 
 /**
- * @summary Verify admin password
+ * @summary Verify admin username and password
  */
 export const verifyAdmin = async (adminCredentials: AdminCredentials, options?: RequestInit): Promise<AdminVerifyResult> => {
 
@@ -626,7 +625,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type VerifyAdminMutationError = ErrorType<void>
 
     /**
- * @summary Verify admin password
+ * @summary Verify admin username and password
  */
 export const useVerifyAdmin = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminCredentials>}, TContext>, request?: SecondParameter<typeof customFetch>}

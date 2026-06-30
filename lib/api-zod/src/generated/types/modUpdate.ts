@@ -13,6 +13,7 @@ export interface ModUpdate {
   gameName?: string;
   description?: string;
   imageUrl?: string;
+  extraImages?: string[];
   download1Label?: string;
   download1Url?: string;
   download2Label?: string;

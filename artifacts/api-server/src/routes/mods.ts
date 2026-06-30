@@ -13,26 +13,40 @@ import {
 
 const router = Router();
 
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-if (!ADMIN_PASSWORD) {
-  throw new Error("ADMIN_PASSWORD environment variable must be set");
+
+if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+  throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set");
 }
 
 function checkAdmin(req: { headers: { [key: string]: string | string[] | undefined } }): boolean {
+  const user = req.headers["x-admin-username"];
   const pw = req.headers["x-admin-password"];
-  return pw === ADMIN_PASSWORD;
+  return user === ADMIN_USERNAME && pw === ADMIN_PASSWORD;
+}
+
+function parseExtraImages(raw: string | null | undefined): string[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function formatMod(mod: typeof modsTable.$inferSelect) {
   return {
     ...mod,
+    extraImages: parseExtraImages(mod.extraImages),
     createdAt: mod.createdAt.toISOString(),
     updatedAt: mod.updatedAt.toISOString(),
   };
 }
 
 // GET /mods
-router.get("/mods", async (req, res) => {
+router.get("/mods", async (_req, res) => {
   const mods = await db.select().from(modsTable).orderBy(modsTable.createdAt);
   res.json(mods.map(formatMod));
 });
@@ -56,6 +70,7 @@ router.post("/mods", async (req, res) => {
       gameName: body.gameName,
       description: body.description ?? null,
       imageUrl: body.imageUrl ?? null,
+      extraImages: body.extraImages ? JSON.stringify(body.extraImages) : null,
       download1Label: body.download1Label ?? null,
       download1Url: body.download1Url ?? null,
       download2Label: body.download2Label ?? null,
@@ -65,27 +80,24 @@ router.post("/mods", async (req, res) => {
   res.status(201).json(formatMod(mod));
 });
 
-// GET /mods/:id
+// GET /mods/:id — also increments view count
 router.get("/mods/:id", async (req, res) => {
   const parsed = GetModParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const [mod] = await db
-    .select()
-    .from(modsTable)
-    .where(eq(modsTable.id, parsed.data.id));
+  const [mod] = await db.select().from(modsTable).where(eq(modsTable.id, parsed.data.id));
   if (!mod) {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  // Increment view count
-  await db
+  const [updated] = await db
     .update(modsTable)
     .set({ viewCount: mod.viewCount + 1, updatedAt: new Date() })
-    .where(eq(modsTable.id, mod.id));
-  res.json(formatMod({ ...mod, viewCount: mod.viewCount + 1 }));
+    .where(eq(modsTable.id, mod.id))
+    .returning();
+  res.json(formatMod(updated));
 });
 
 // PUT /mods/:id
@@ -105,19 +117,20 @@ router.put("/mods/:id", async (req, res) => {
     return;
   }
   const body = bodyParsed.data;
+  const patch: Record<string, unknown> = { updatedAt: new Date() };
+  if (body.title !== undefined) patch.title = body.title;
+  if (body.gameName !== undefined) patch.gameName = body.gameName;
+  if (body.description !== undefined) patch.description = body.description || null;
+  if (body.imageUrl !== undefined) patch.imageUrl = body.imageUrl || null;
+  if (body.extraImages !== undefined) patch.extraImages = JSON.stringify(body.extraImages);
+  if (body.download1Label !== undefined) patch.download1Label = body.download1Label || null;
+  if (body.download1Url !== undefined) patch.download1Url = body.download1Url || null;
+  if (body.download2Label !== undefined) patch.download2Label = body.download2Label || null;
+  if (body.download2Url !== undefined) patch.download2Url = body.download2Url || null;
+
   const [mod] = await db
     .update(modsTable)
-    .set({
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.gameName !== undefined && { gameName: body.gameName }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
-      ...(body.download1Label !== undefined && { download1Label: body.download1Label }),
-      ...(body.download1Url !== undefined && { download1Url: body.download1Url }),
-      ...(body.download2Label !== undefined && { download2Label: body.download2Label }),
-      ...(body.download2Url !== undefined && { download2Url: body.download2Url }),
-      updatedAt: new Date(),
-    })
+    .set(patch)
     .where(eq(modsTable.id, paramParsed.data.id))
     .returning();
   if (!mod) {
@@ -138,10 +151,7 @@ router.delete("/mods/:id", async (req, res) => {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const [mod] = await db
-    .delete(modsTable)
-    .where(eq(modsTable.id, parsed.data.id))
-    .returning();
+  const [mod] = await db.delete(modsTable).where(eq(modsTable.id, parsed.data.id)).returning();
   if (!mod) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -156,10 +166,7 @@ router.post("/mods/:id/download", async (req, res) => {
     res.status(400).json({ error: "Invalid id" });
     return;
   }
-  const [mod] = await db
-    .select()
-    .from(modsTable)
-    .where(eq(modsTable.id, parsed.data.id));
+  const [mod] = await db.select().from(modsTable).where(eq(modsTable.id, parsed.data.id));
   if (!mod) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -179,15 +186,15 @@ router.post("/admin/verify", async (req, res) => {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
-  if (parsed.data.password === ADMIN_PASSWORD) {
+  if (parsed.data.username === ADMIN_USERNAME && parsed.data.password === ADMIN_PASSWORD) {
     res.json({ success: true });
   } else {
-    res.status(401).json({ success: false, error: "Invalid password" });
+    res.status(401).json({ success: false, error: "بيانات الدخول غير صحيحة" });
   }
 });
 
 // GET /stats
-router.get("/stats", async (req, res) => {
+router.get("/stats", async (_req, res) => {
   const [stats] = await db
     .select({
       totalMods: count(modsTable.id),

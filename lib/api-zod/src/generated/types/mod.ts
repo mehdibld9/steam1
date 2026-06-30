@@ -14,6 +14,8 @@ export interface Mod {
   description?: string | null;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  extraImages?: string[] | null;
   downloadCount: number;
   viewCount: number;
   /** @nullable */

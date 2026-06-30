@@ -17,6 +17,8 @@ export interface Mod {
   description?: string | null;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  extraImages?: string[] | null;
   downloadCount: number;
   viewCount: number;
   /** @nullable */
@@ -38,6 +40,7 @@ export interface ModInput {
   gameName: string;
   description?: string;
   imageUrl?: string;
+  extraImages?: string[];
   download1Label?: string;
   download1Url?: string;
   download2Label?: string;
@@ -51,6 +54,7 @@ export interface ModUpdate {
   gameName?: string;
   description?: string;
   imageUrl?: string;
+  extraImages?: string[];
   download1Label?: string;
   download1Url?: string;
   download2Label?: string;
@@ -58,6 +62,7 @@ export interface ModUpdate {
 }
 
 export interface AdminCredentials {
+  username: string;
   password: string;
 }
 

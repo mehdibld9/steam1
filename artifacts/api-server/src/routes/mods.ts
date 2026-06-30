@@ -13,8 +13,8 @@ import {
 
 const router = Router();
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME?.trim();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim();
 
 if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
   throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set");
@@ -186,7 +186,7 @@ router.post("/admin/verify", async (req, res) => {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
-  if (parsed.data.username === ADMIN_USERNAME && parsed.data.password === ADMIN_PASSWORD) {
+  if (parsed.data.username.trim() === ADMIN_USERNAME && parsed.data.password.trim() === ADMIN_PASSWORD) {
     res.json({ success: true });
   } else {
     res.status(401).json({ success: false, error: "بيانات الدخول غير صحيحة" });

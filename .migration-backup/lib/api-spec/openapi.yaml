@@ -1,0 +1,326 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Arabic Game Translations API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: mods
+    description: Translation mod operations
+  - name: admin
+    description: Admin operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /mods:
+    get:
+      operationId: listMods
+      tags: [mods]
+      summary: List all translation mods
+      responses:
+        "200":
+          description: List of mods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Mod"
+
+    post:
+      operationId: createMod
+      tags: [admin]
+      summary: Create a new translation mod (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModInput"
+      responses:
+        "201":
+          description: Created mod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mod"
+        "401":
+          description: Unauthorized
+
+  /mods/{id}:
+    get:
+      operationId: getMod
+      tags: [mods]
+      summary: Get a single mod and increment view count
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mod details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mod"
+        "404":
+          description: Not found
+
+    put:
+      operationId: updateMod
+      tags: [admin]
+      summary: Update a mod (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModUpdate"
+      responses:
+        "200":
+          description: Updated mod
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mod"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+    delete:
+      operationId: deleteMod
+      tags: [admin]
+      summary: Delete a mod (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /mods/{id}/download:
+    post:
+      operationId: trackDownload
+      tags: [mods]
+      summary: Increment download count for a mod
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Download tracked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mod"
+        "404":
+          description: Not found
+
+  /admin/verify:
+    post:
+      operationId: verifyAdmin
+      tags: [admin]
+      summary: Verify admin username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCredentials"
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminVerifyResult"
+        "401":
+          description: Invalid credentials
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [mods]
+      summary: Get overall site statistics
+      responses:
+        "200":
+          description: Site stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Mod:
+      type: object
+      required:
+        - id
+        - title
+        - gameName
+        - downloadCount
+        - viewCount
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        gameName:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        extraImages:
+          type: ["array", "null"]
+          items:
+            type: string
+        downloadCount:
+          type: integer
+        viewCount:
+          type: integer
+        download1Label:
+          type: ["string", "null"]
+        download1Url:
+          type: ["string", "null"]
+        download2Label:
+          type: ["string", "null"]
+        download2Url:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ModInput:
+      type: object
+      required:
+        - title
+        - gameName
+      properties:
+        title:
+          type: string
+          minLength: 1
+        gameName:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        imageUrl:
+          type: string
+        extraImages:
+          type: array
+          items:
+            type: string
+        download1Label:
+          type: string
+        download1Url:
+          type: string
+        download2Label:
+          type: string
+        download2Url:
+          type: string
+
+    ModUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        gameName:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        imageUrl:
+          type: string
+        extraImages:
+          type: array
+          items:
+            type: string
+        download1Label:
+          type: string
+        download1Url:
+          type: string
+        download2Label:
+          type: string
+        download2Url:
+          type: string
+
+    AdminCredentials:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AdminVerifyResult:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+
+    SiteStats:
+      type: object
+      required:
+        - totalMods
+        - totalDownloads
+        - totalViews
+      properties:
+        totalMods:
+          type: integer
+        totalDownloads:
+          type: integer
+        totalViews:
+          type: integer

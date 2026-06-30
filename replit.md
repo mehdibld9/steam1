@@ -1,58 +1,45 @@
-# مكتبة التعريب — Arabic Game Translations
+# [Project name]
 
-A mod-sharing site for Arabic game translation files, for games that don't natively support Arabic. Dark-themed with green accents, matching the Nexus Mods aesthetic.
+_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
-- `pnpm --filter @workspace/arabic-mods run dev` — run the frontend (port assigned by workflow)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
+- `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string (auto-provisioned)
-- Required secret: `ADMIN_PASSWORD` — password for the /admin panel
+- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- Frontend: React + Vite + Tailwind + Wouter
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
+- Build: esbuild (CJS bundle)
 
 ## Where things live
 
-- `lib/api-spec/openapi.yaml` — API contract (source of truth)
-- `lib/db/src/schema/mods.ts` — mods table schema
-- `artifacts/api-server/src/routes/mods.ts` — all mod API routes
-- `artifacts/arabic-mods/src/pages/` — Home, ModDetail, Admin pages
-- `artifacts/arabic-mods/src/index.css` — dark theme (near-black bg, green primary)
-
-## Pages
-
-- `/` — Home: 4-column grid of translation mod cards
-- `/mod/:id` — Mod detail page with 2 configurable download buttons
-- `/admin` — Admin panel (password-gated): add/edit/delete mods, configure download links
-
-## Admin
-
-- Go to `/admin`, enter the `ADMIN_PASSWORD` secret value
-- Add mods with title, game name, description, image URL, and two download buttons (label + URL each)
-- The 2 download buttons on the mod detail page are configured per-mod in the admin panel
+_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
 
 ## Architecture decisions
 
-- Admin auth: password sent per-request as `x-admin-password` header; stored in `localStorage` after verify
-- View count increments on `GET /api/mods/:id`; download count increments via `POST /api/mods/:id/download`
-- No light mode — site is permanently dark to match the gaming aesthetic
+_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+
+## Product
+
+_Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-_Populate as you build._
+_Populate as you build — explicit user instructions worth remembering across sessions._
 
 ## Gotchas
 
-- After changing `lib/db/src/schema/`, run `pnpm --filter @workspace/db run push` then `pnpm run typecheck:libs`
-- After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen`
-- Admin routes check `x-admin-password` header against the `ADMIN_PASSWORD` secret
+_Populate as you build — sharp edges, "always run X before Y" rules._
+
+## Pointers
+
+- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

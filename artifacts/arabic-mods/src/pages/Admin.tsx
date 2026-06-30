@@ -41,7 +41,9 @@ const EMPTY_FORM: FormData = {
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [setupUsername, setSetupUsername] = useState("")
   const [setupPassword, setSetupPassword] = useState("")
   const [setupConfirm, setSetupConfirm] = useState("")
   const [error, setError] = useState("")
@@ -74,14 +76,19 @@ export default function Admin() {
       setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
       return
     }
+    if (!setupUsername.trim()) {
+      setError("يرجى إدخال اسم المستخدم")
+      return
+    }
     if (setupPassword !== setupConfirm) {
       setError("كلمتا المرور غير متطابقتين")
       return
     }
     setupAdmin.mutate(
-      { data: { password: setupPassword } },
+      { data: { username: setupUsername.trim(), password: setupPassword } },
       {
         onSuccess: () => {
+          setUsername(setupUsername.trim())
           setPassword(setupPassword)
           setIsAuthenticated(true)
           setError("")
@@ -96,23 +103,24 @@ export default function Admin() {
     e.preventDefault()
     setError("")
     verifyAdmin.mutate(
-      { data: { password } },
+      { data: { username, password } },
       {
         onSuccess: (res) => {
           if (res.success) {
             setIsAuthenticated(true)
             setError("")
           } else {
-            setError("كلمة المرور غير صحيحة")
+            setError("بيانات الدخول غير صحيحة")
           }
         },
-        onError: () => setError("كلمة المرور غير صحيحة"),
+        onError: () => setError("بيانات الدخول غير صحيحة"),
       }
     )
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
+    setUsername("")
     setPassword("")
   }
 
@@ -225,6 +233,19 @@ export default function Admin() {
             <CardContent>
               <form onSubmit={handleSetup} className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="setup-username">اسم المستخدم</Label>
+                  <Input
+                    id="setup-username"
+                    type="text"
+                    value={setupUsername}
+                    onChange={(e) => setSetupUsername(e.target.value)}
+                    dir="ltr"
+                    required
+                    autoComplete="username"
+                    className="focus-visible:ring-primary font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="setup-password">كلمة المرور (6 أحرف على الأقل)</Label>
                   <Input
                     id="setup-password"
@@ -275,6 +296,19 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">اسم المستخدم</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    dir="ltr"
+                    required
+                    autoComplete="username"
+                    className="focus-visible:ring-primary font-mono"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">كلمة المرور</Label>
                   <Input

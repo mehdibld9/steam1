@@ -187,11 +187,13 @@ export const GetAdminStatusResponse = zod.object({
 /**
  * @summary Set up admin password for the first time (only works if no password set)
  */
+
 export const setupAdminBodyPasswordMin = 6;
 
 
 
 export const SetupAdminBody = zod.object({
+  "username": zod.string().min(1),
   "password": zod.string().min(setupAdminBodyPasswordMin)
 })
 
@@ -204,6 +206,7 @@ export const SetupAdminResponse = zod.object({
  * @summary Verify admin password
  */
 export const VerifyAdminBody = zod.object({
+  "username": zod.string(),
   "password": zod.string()
 })
 

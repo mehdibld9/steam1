@@ -337,8 +337,12 @@ components:
     AdminSetupBody:
       type: object
       required:
+        - username
         - password
       properties:
+        username:
+          type: string
+          minLength: 1
         password:
           type: string
           minLength: 6
@@ -346,8 +350,11 @@ components:
     AdminLoginBody:
       type: object
       required:
+        - username
         - password
       properties:
+        username:
+          type: string
         password:
           type: string
 

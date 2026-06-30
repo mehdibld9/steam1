@@ -64,22 +64,32 @@ router.post("/admin/setup", async (req, res) => {
     return;
   }
   const hash = hashPassword(parsed.data.password);
-  await db.insert(adminSettingsTable).values({ passwordHash: hash });
+  await db.insert(adminSettingsTable).values({
+    username: parsed.data.username.trim(),
+    passwordHash: hash,
+  });
   res.json({ success: true });
 });
 
 // POST /admin/verify
 router.post("/admin/verify", async (req, res) => {
-  const parsed = AdminLoginBody.safeParse(req.body);
+  const parsed = VerifyAdminBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
-  const ok = await checkAdmin(parsed.data.password);
-  if (ok) {
+  const rows = await db.select().from(adminSettingsTable).limit(1);
+  const row = rows[0];
+  if (!row) {
+    res.status(401).json({ success: false, error: "بيانات الدخول غير صحيحة" });
+    return;
+  }
+  const usernameMatch = parsed.data.username.trim() === row.username;
+  const passwordMatch = hashPassword(parsed.data.password) === row.passwordHash;
+  if (usernameMatch && passwordMatch) {
     res.json({ success: true });
   } else {
-    res.status(401).json({ success: false, error: "كلمة المرور غير صحيحة" });
+    res.status(401).json({ success: false, error: "بيانات الدخول غير صحيحة" });
   }
 });
 

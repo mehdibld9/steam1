@@ -61,8 +61,16 @@ export interface ModUpdate {
   download2Url?: string;
 }
 
-export interface AdminCredentials {
-  username: string;
+export interface AdminStatus {
+  isSetup: boolean;
+}
+
+export interface AdminSetupBody {
+  /** @minLength 6 */
+  password: string;
+}
+
+export interface AdminLoginBody {
   password: string;
 }
 

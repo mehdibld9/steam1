@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './adminCredentials';
+export * from './adminLoginBody';
+export * from './adminSetupBody';
+export * from './adminStatus';
 export * from './adminVerifyResult';
 export * from './healthStatus';
 export * from './mod';

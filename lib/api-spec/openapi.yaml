@@ -151,17 +151,51 @@ paths:
         "404":
           description: Not found
 
-  /admin/verify:
-    post:
-      operationId: verifyAdmin
+  /admin/status:
+    get:
+      operationId: getAdminStatus
       tags: [admin]
-      summary: Verify admin username and password
+      summary: Check if admin password has been set up
+      responses:
+        "200":
+          description: Admin setup status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStatus"
+
+  /admin/setup:
+    post:
+      operationId: setupAdmin
+      tags: [admin]
+      summary: Set up admin password for the first time (only works if no password set)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdminCredentials"
+              $ref: "#/components/schemas/AdminSetupBody"
+      responses:
+        "200":
+          description: Admin password set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminVerifyResult"
+        "409":
+          description: Admin already set up
+
+  /admin/verify:
+    post:
+      operationId: verifyAdmin
+      tags: [admin]
+      summary: Verify admin password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
       responses:
         "200":
           description: Verified
@@ -292,14 +326,28 @@ components:
         download2Url:
           type: string
 
-    AdminCredentials:
+    AdminStatus:
       type: object
       required:
-        - username
+        - isSetup
+      properties:
+        isSetup:
+          type: boolean
+
+    AdminSetupBody:
+      type: object
+      required:
         - password
       properties:
-        username:
+        password:
           type: string
+          minLength: 6
+
+    AdminLoginBody:
+      type: object
+      required:
+        - password
+      properties:
         password:
           type: string
 

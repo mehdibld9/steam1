@@ -20,7 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  AdminCredentials,
+  AdminLoginBody,
+  AdminSetupBody,
+  AdminStatus,
   AdminVerifyResult,
   HealthStatus,
   Mod,
@@ -568,6 +570,153 @@ export const useTrackDownload = <TError = ErrorType<void>,
       return useMutation(getTrackDownloadMutationOptions(options));
     }
 
+export const getGetAdminStatusUrl = () => {
+
+
+
+
+  return `/api/admin/status`
+}
+
+/**
+ * @summary Check if admin password has been set up
+ */
+export const getAdminStatus = async ( options?: RequestInit): Promise<AdminStatus> => {
+
+  return customFetch<AdminStatus>(getGetAdminStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminStatusQueryKey = () => {
+    return [
+    `/api/admin/status`
+    ] as const;
+    }
+
+
+export const getGetAdminStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAdminStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminStatus>>> = ({ signal }) => getAdminStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminStatus>>>
+export type GetAdminStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check if admin password has been set up
+ */
+
+export function useGetAdminStatus<TData = Awaited<ReturnType<typeof getAdminStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetupAdminUrl = () => {
+
+
+
+
+  return `/api/admin/setup`
+}
+
+/**
+ * @summary Set up admin password for the first time (only works if no password set)
+ */
+export const setupAdmin = async (adminSetupBody: AdminSetupBody, options?: RequestInit): Promise<AdminVerifyResult> => {
+
+  return customFetch<AdminVerifyResult>(getSetupAdminUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminSetupBody)
+  }
+);}
+
+
+
+
+export const getSetupAdminMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext> => {
+
+const mutationKey = ['setupAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupAdmin>>, {data: BodyType<AdminSetupBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setupAdmin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetupAdminMutationResult = NonNullable<Awaited<ReturnType<typeof setupAdmin>>>
+    export type SetupAdminMutationBody = BodyType<AdminSetupBody>
+    export type SetupAdminMutationError = ErrorType<void>
+
+    /**
+ * @summary Set up admin password for the first time (only works if no password set)
+ */
+export const useSetupAdmin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setupAdmin>>,
+        TError,
+        {data: BodyType<AdminSetupBody>},
+        TContext
+      > => {
+      return useMutation(getSetupAdminMutationOptions(options));
+    }
+
 export const getVerifyAdminUrl = () => {
 
 
@@ -577,16 +726,16 @@ export const getVerifyAdminUrl = () => {
 }
 
 /**
- * @summary Verify admin username and password
+ * @summary Verify admin password
  */
-export const verifyAdmin = async (adminCredentials: AdminCredentials, options?: RequestInit): Promise<AdminVerifyResult> => {
+export const verifyAdmin = async (adminLoginBody: AdminLoginBody, options?: RequestInit): Promise<AdminVerifyResult> => {
 
   return customFetch<AdminVerifyResult>(getVerifyAdminUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(adminCredentials)
+    body: JSON.stringify(adminLoginBody)
   }
 );}
 
@@ -594,8 +743,8 @@ export const verifyAdmin = async (adminCredentials: AdminCredentials, options?: 
 
 
 export const getVerifyAdminMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminCredentials>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminCredentials>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext> => {
 
 const mutationKey = ['verifyAdmin'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -607,7 +756,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyAdmin>>, {data: BodyType<AdminCredentials>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyAdmin>>, {data: BodyType<AdminLoginBody>}> = (props) => {
           const {data} = props ?? {};
 
           return  verifyAdmin(data,requestOptions)
@@ -621,18 +770,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type VerifyAdminMutationResult = NonNullable<Awaited<ReturnType<typeof verifyAdmin>>>
-    export type VerifyAdminMutationBody = BodyType<AdminCredentials>
+    export type VerifyAdminMutationBody = BodyType<AdminLoginBody>
     export type VerifyAdminMutationError = ErrorType<void>
 
     /**
- * @summary Verify admin username and password
+ * @summary Verify admin password
  */
 export const useVerifyAdmin = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminCredentials>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof verifyAdmin>>,
         TError,
-        {data: BodyType<AdminCredentials>},
+        {data: BodyType<AdminLoginBody>},
         TContext
       > => {
       return useMutation(getVerifyAdminMutationOptions(options));

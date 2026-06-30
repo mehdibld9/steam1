@@ -1,7 +1,8 @@
 import { Header } from "@/components/layout/Header"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
-  useVerifyAdmin, useListMods, useDeleteMod, useCreateMod, useUpdateMod,
+  useVerifyAdmin, useSetupAdmin, useGetAdminStatus,
+  useListMods, useDeleteMod, useCreateMod, useUpdateMod,
   useGetStats, getListModsQueryKey, getGetStatsQueryKey
 } from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQueryClient } from "@tanstack/react-query"
-import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus } from "lucide-react"
+import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus, KeyRound } from "lucide-react"
 import type { Mod } from "@workspace/api-client-react"
 import { Link } from "wouter"
 
@@ -40,77 +41,78 @@ const EMPTY_FORM: FormData = {
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [setupPassword, setSetupPassword] = useState("")
+  const [setupConfirm, setSetupConfirm] = useState("")
   const [error, setError] = useState("")
   const [view, setView] = useState<"list" | "form">("list")
   const [editingMod, setEditingMod] = useState<Mod | null>(null)
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
   const [newExtraImageUrl, setNewExtraImageUrl] = useState("")
 
-  const adminHeaders = { headers: { "x-admin-username": username, "x-admin-password": password } }
+  const adminHeader = { headers: { "x-admin-password": password } }
 
+  const { data: adminStatus, isLoading: isStatusLoading } = useGetAdminStatus()
   const verifyAdmin = useVerifyAdmin()
+  const setupAdmin = useSetupAdmin()
   const { data: mods, isLoading: isModsLoading } = useListMods({
     query: { enabled: isAuthenticated, queryKey: getListModsQueryKey() }
   })
   const { data: stats } = useGetStats({
     query: { enabled: isAuthenticated, queryKey: getGetStatsQueryKey() },
-    request: adminHeaders,
+    request: adminHeader,
   })
-  const deleteMod = useDeleteMod({ request: adminHeaders })
-  const createMod = useCreateMod({ request: adminHeaders })
-  const updateMod = useUpdateMod({ request: adminHeaders })
+  const deleteMod = useDeleteMod({ request: adminHeader })
+  const createMod = useCreateMod({ request: adminHeader })
+  const updateMod = useUpdateMod({ request: adminHeader })
   const queryClient = useQueryClient()
 
-  // Auto-login from localStorage
-  useEffect(() => {
-    const savedUser = localStorage.getItem("adminUsername")
-    const savedPass = localStorage.getItem("adminPassword")
-    if (savedUser && savedPass) {
-      setUsername(savedUser)
-      setPassword(savedPass)
-      verifyAdmin.mutate(
-        { data: { username: savedUser, password: savedPass } },
-        {
-          onSuccess: (res) => {
-            if (res.success) {
-              setIsAuthenticated(true)
-            } else {
-              localStorage.removeItem("adminUsername")
-              localStorage.removeItem("adminPassword")
-            }
-          },
-        }
-      )
+  const handleSetup = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    if (setupPassword.length < 6) {
+      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+      return
     }
-  }, [])
+    if (setupPassword !== setupConfirm) {
+      setError("كلمتا المرور غير متطابقتين")
+      return
+    }
+    setupAdmin.mutate(
+      { data: { password: setupPassword } },
+      {
+        onSuccess: () => {
+          setPassword(setupPassword)
+          setIsAuthenticated(true)
+          setError("")
+          queryClient.invalidateQueries()
+        },
+        onError: () => setError("حدث خطأ أثناء الإعداد"),
+      }
+    )
+  }
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
     verifyAdmin.mutate(
-      { data: { username, password } },
+      { data: { password } },
       {
         onSuccess: (res) => {
           if (res.success) {
             setIsAuthenticated(true)
-            localStorage.setItem("adminUsername", username)
-            localStorage.setItem("adminPassword", password)
             setError("")
           } else {
-            setError("بيانات الدخول غير صحيحة")
+            setError("كلمة المرور غير صحيحة")
           }
         },
-        onError: () => setError("حدث خطأ أثناء تسجيل الدخول"),
+        onError: () => setError("كلمة المرور غير صحيحة"),
       }
     )
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("adminUsername")
-    localStorage.removeItem("adminPassword")
     setIsAuthenticated(false)
-    setUsername("")
     setPassword("")
   }
 
@@ -176,12 +178,7 @@ export default function Admin() {
     if (editingMod) {
       updateMod.mutate(
         { id: editingMod.id, data: payload },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
-            setView("list")
-          },
-        }
+        { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListModsQueryKey() }); setView("list") } }
       )
     } else {
       createMod.mutate(
@@ -197,7 +194,76 @@ export default function Admin() {
     }
   }
 
-  // ─── Login screen ────────────────────────────────────────────────────────────
+  // ─── Loading ──────────────────────────────────────────────────────────────────
+  if (isStatusLoading) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col bg-background" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">جاري التحميل...</p>
+        </main>
+      </div>
+    )
+  }
+
+  // ─── First-time setup ─────────────────────────────────────────────────────────
+  if (!adminStatus?.isSetup) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col bg-background" dir="rtl">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md border-primary/20 shadow-lg shadow-primary/5">
+            <CardHeader className="text-center pb-2">
+              <div className="flex justify-center mb-3">
+                <div className="p-3 rounded-full bg-primary/10 text-primary">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+              </div>
+              <CardTitle className="text-2xl text-primary font-bold">إعداد كلمة مرور الإدارة</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">أول مرة — اختر كلمة مرور للوحة التحكم</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSetup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="setup-password">كلمة المرور (6 أحرف على الأقل)</Label>
+                  <Input
+                    id="setup-password"
+                    type="password"
+                    value={setupPassword}
+                    onChange={(e) => setSetupPassword(e.target.value)}
+                    dir="ltr"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    className="focus-visible:ring-primary font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setup-confirm">تأكيد كلمة المرور</Label>
+                  <Input
+                    id="setup-confirm"
+                    type="password"
+                    value={setupConfirm}
+                    onChange={(e) => setSetupConfirm(e.target.value)}
+                    dir="ltr"
+                    required
+                    autoComplete="new-password"
+                    className="focus-visible:ring-primary font-mono"
+                  />
+                </div>
+                {error && <p className="text-sm text-destructive font-bold">{error}</p>}
+                <Button type="submit" className="w-full py-6 text-lg" disabled={setupAdmin.isPending}>
+                  {setupAdmin.isPending ? "جاري الحفظ..." : "تعيين كلمة المرور والدخول"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
+  // ─── Login ────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="min-h-[100dvh] flex flex-col bg-background" dir="rtl">
@@ -209,19 +275,6 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">اسم المستخدم</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    dir="ltr"
-                    required
-                    autoComplete="username"
-                    className="focus-visible:ring-primary font-mono"
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">كلمة المرور</Label>
                   <Input
@@ -266,7 +319,6 @@ export default function Admin() {
 
         {view === "list" ? (
           <>
-            {/* Stats */}
             {stats && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <Card className="bg-card/50 border-primary/20">
@@ -299,7 +351,6 @@ export default function Admin() {
               </div>
             )}
 
-            {/* Mods table */}
             <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
                 <h2 className="font-bold text-lg flex items-center gap-2">
@@ -342,10 +393,10 @@ export default function Admin() {
                           <td className="px-6 py-4 font-mono text-center text-muted-foreground">{mod.viewCount.toLocaleString()}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="icon" onClick={() => openForm(mod)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary" title="تعديل">
+                              <Button variant="ghost" size="icon" onClick={() => openForm(mod)} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(mod.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="حذف" disabled={deleteMod.isPending}>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(mod.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" disabled={deleteMod.isPending}>
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -359,7 +410,6 @@ export default function Admin() {
             </div>
           </>
         ) : (
-          // ─── Form ─────────────────────────────────────────────────────────────
           <div className="max-w-3xl mx-auto">
             <Button variant="ghost" onClick={() => setView("list")} className="mb-6 hover:bg-transparent hover:text-primary pl-0">
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -371,8 +421,6 @@ export default function Admin() {
               </CardHeader>
               <CardContent className="p-6">
                 <form onSubmit={handleFormSubmit} className="space-y-6">
-
-                  {/* Title + Game */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="title" className="text-primary font-bold">اسم التعريب *</Label>
@@ -384,7 +432,6 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Cover image */}
                   <div className="space-y-2">
                     <Label htmlFor="imageUrl" className="font-bold">رابط صورة الغلاف</Label>
                     <Input id="imageUrl" type="url" value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} dir="ltr" className="bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary text-left" placeholder="https://..." />
@@ -395,22 +442,19 @@ export default function Admin() {
                     )}
                   </div>
 
-                  {/* Extra images */}
                   <div className="space-y-3">
                     <Label className="font-bold flex items-center gap-2">
                       <ImagePlus className="w-4 h-4 text-primary" />
                       صور إضافية (معرض الصور)
                     </Label>
                     <div className="bg-secondary/20 p-4 rounded-lg border border-border space-y-3">
-                      {/* Existing extra images */}
                       {formData.extraImages.map((url, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <div className="w-12 h-9 rounded overflow-hidden border border-border flex-shrink-0">
                             <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
                           </div>
                           <Input value={url} onChange={(e) => {
-                            const imgs = [...formData.extraImages]
-                            imgs[idx] = e.target.value
+                            const imgs = [...formData.extraImages]; imgs[idx] = e.target.value
                             setFormData({ ...formData, extraImages: imgs })
                           }} dir="ltr" className="bg-background text-left text-xs flex-1 h-8" />
                           <Button type="button" variant="ghost" size="icon" onClick={() => removeExtraImage(idx)} className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0">
@@ -418,17 +462,10 @@ export default function Admin() {
                           </Button>
                         </div>
                       ))}
-                      {/* Add new */}
                       <div className="flex gap-2">
-                        <Input
-                          type="url"
-                          value={newExtraImageUrl}
-                          onChange={(e) => setNewExtraImageUrl(e.target.value)}
+                        <Input type="url" value={newExtraImageUrl} onChange={(e) => setNewExtraImageUrl(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addExtraImage() } }}
-                          dir="ltr"
-                          placeholder="https://... (اضغط Enter أو +)"
-                          className="bg-background text-left text-sm h-9"
-                        />
+                          dir="ltr" placeholder="https://... (اضغط Enter أو +)" className="bg-background text-left text-sm h-9" />
                         <Button type="button" variant="outline" size="sm" onClick={addExtraImage} className="flex-shrink-0 h-9">
                           <Plus className="w-4 h-4" />
                         </Button>
@@ -436,13 +473,11 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Description */}
                   <div className="space-y-2">
                     <Label htmlFor="description" className="font-bold">الوصف</Label>
                     <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="min-h-[150px] bg-secondary/50 focus-visible:ring-primary border-transparent focus-visible:border-primary resize-y" />
                   </div>
 
-                  {/* Download links */}
                   <div className="border-t border-border pt-6 mt-6">
                     <h3 className="font-bold mb-4 flex items-center gap-2">
                       <Download className="w-4 h-4 text-primary" />
@@ -474,8 +509,8 @@ export default function Admin() {
 
                   <div className="flex justify-end gap-4 pt-6 border-t border-border">
                     <Button type="button" variant="outline" onClick={() => setView("list")}>إلغاء</Button>
-                    <Button type="submit" disabled={createMod.isPending || updateMod.isPending} className="px-8">
-                      {createMod.isPending || updateMod.isPending ? "جاري الحفظ..." : "حفظ التعريب"}
+                    <Button type="submit" disabled={createMod.isPending || updateMod.isPending}>
+                      {createMod.isPending || updateMod.isPending ? "جاري الحفظ..." : editingMod ? "حفظ التعديلات" : "إضافة التعريب"}
                     </Button>
                   </div>
                 </form>

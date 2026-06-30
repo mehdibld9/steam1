@@ -177,10 +177,33 @@ export const TrackDownloadResponse = zod.object({
 
 
 /**
- * @summary Verify admin username and password
+ * @summary Check if admin password has been set up
+ */
+export const GetAdminStatusResponse = zod.object({
+  "isSetup": zod.boolean()
+})
+
+
+/**
+ * @summary Set up admin password for the first time (only works if no password set)
+ */
+export const setupAdminBodyPasswordMin = 6;
+
+
+
+export const SetupAdminBody = zod.object({
+  "password": zod.string().min(setupAdminBodyPasswordMin)
+})
+
+export const SetupAdminResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Verify admin password
  */
 export const VerifyAdminBody = zod.object({
-  "username": zod.string(),
   "password": zod.string()
 })
 

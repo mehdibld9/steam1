@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Arabic Game Translations"
+version = "1.0.0"
+id = "artifacts/arabic-mods"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23146
+
+[services.development]
+run = "pnpm --filter @workspace/arabic-mods run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/arabic-mods", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/arabic-mods/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23146"
+BASE_PATH = "/"

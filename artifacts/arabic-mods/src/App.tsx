@@ -6,6 +6,7 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Home from '@/pages/Home';
 import ModDetail from '@/pages/ModDetail';
 import Admin from '@/pages/Admin';
+import DownloadPage from '@/pages/DownloadPage';
 
 const queryClient = new QueryClient();
 
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/mod/:id" component={ModDetail} />
+      <Route path="/download/:id/:which" component={DownloadPage} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>

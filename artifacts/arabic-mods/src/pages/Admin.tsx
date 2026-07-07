@@ -3,7 +3,9 @@ import { useState } from "react"
 import {
   useVerifyAdmin, useSetupAdmin, useGetAdminStatus,
   useListMods, useDeleteMod, useCreateMod, useUpdateMod,
-  useGetStats, getListModsQueryKey, getGetStatsQueryKey
+  useGetStats, getListModsQueryKey, getGetStatsQueryKey,
+  useListAds, useCreateAd, useUpdateAd, useDeleteAd,
+  getListAdsQueryKey
 } from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,8 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQueryClient } from "@tanstack/react-query"
-import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus, KeyRound } from "lucide-react"
-import type { Mod } from "@workspace/api-client-react"
+import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus, KeyRound, Megaphone, Globe, Home, ToggleLeft, ToggleRight } from "lucide-react"
+import type { Mod, Ad } from "@workspace/api-client-react"
 import { Link } from "wouter"
 
 interface FormData {
@@ -52,6 +54,12 @@ export default function Admin() {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
   const [newExtraImageUrl, setNewExtraImageUrl] = useState("")
 
+  // Ad management state
+  const [adSection, setAdSection] = useState(false)
+  const [editingAd, setEditingAd] = useState<Ad | null>(null)
+  const [adForm, setAdForm] = useState({ title: "", imageUrl: "", linkUrl: "", position: "home" as "home" | "mod_detail", isActive: true })
+  const [showAdForm, setShowAdForm] = useState(false)
+
   const adminHeader = { headers: { "x-admin-password": password } }
 
   const { data: adminStatus, isLoading: isStatusLoading } = useGetAdminStatus()
@@ -64,9 +72,15 @@ export default function Admin() {
     query: { enabled: isAuthenticated, queryKey: getGetStatsQueryKey() },
     request: adminHeader,
   })
+  const { data: ads, isLoading: isAdsLoading } = useListAds({
+    query: { enabled: isAuthenticated, queryKey: getListAdsQueryKey() }
+  })
   const deleteMod = useDeleteMod({ request: adminHeader })
   const createMod = useCreateMod({ request: adminHeader })
   const updateMod = useUpdateMod({ request: adminHeader })
+  const createAd = useCreateAd({ request: adminHeader })
+  const updateAd = useUpdateAd({ request: adminHeader })
+  const deleteAd = useDeleteAd({ request: adminHeader })
   const queryClient = useQueryClient()
 
   const handleSetup = (e: React.FormEvent) => {
@@ -122,6 +136,45 @@ export default function Admin() {
     setIsAuthenticated(false)
     setUsername("")
     setPassword("")
+  }
+
+  const openAdForm = (ad?: Ad) => {
+    if (ad) {
+      setEditingAd(ad)
+      setAdForm({ title: ad.title ?? "", imageUrl: ad.imageUrl, linkUrl: ad.linkUrl, position: ad.position as "home" | "mod_detail", isActive: ad.isActive })
+    } else {
+      setEditingAd(null)
+      setAdForm({ title: "", imageUrl: "", linkUrl: "", position: "home", isActive: true })
+    }
+    setShowAdForm(true)
+  }
+
+  const handleAdSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const payload = { ...adForm, title: adForm.title || undefined }
+    if (editingAd) {
+      updateAd.mutate(
+        { id: editingAd.id, data: payload },
+        { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListAdsQueryKey() }); setShowAdForm(false) } }
+      )
+    } else {
+      createAd.mutate(
+        { data: payload },
+        { onSuccess: () => { queryClient.invalidateQueries({ queryKey: getListAdsQueryKey() }); setShowAdForm(false) } }
+      )
+    }
+  }
+
+  const handleDeleteAd = (id: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الإعلان؟")) return
+    deleteAd.mutate({ id }, { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAdsQueryKey() }) })
+  }
+
+  const toggleAdActive = (ad: Ad) => {
+    updateAd.mutate(
+      { id: ad.id, data: { imageUrl: ad.imageUrl, linkUrl: ad.linkUrl, position: ad.position as "home" | "mod_detail", isActive: !ad.isActive } },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAdsQueryKey() }) }
+    )
   }
 
   const handleDelete = (id: number) => {
@@ -441,6 +494,117 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* ─── Ads Management ─────────────────────────────────────────────── */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mt-8">
+              <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
+                <button
+                  type="button"
+                  className="font-bold text-lg flex items-center gap-2 hover:text-primary transition-colors"
+                  onClick={() => setAdSection((v) => !v)}
+                >
+                  <Megaphone className="w-5 h-5 text-primary" />
+                  إدارة الإعلانات
+                  <span className="text-xs text-muted-foreground font-normal mr-1">({ads?.length ?? 0} إعلان)</span>
+                  <span className="text-muted-foreground text-sm">{adSection ? "▲" : "▼"}</span>
+                </button>
+                {adSection && (
+                  <Button size="sm" onClick={() => openAdForm()}>
+                    <Plus className="w-4 h-4 ml-1" />
+                    إضافة إعلان
+                  </Button>
+                )}
+              </div>
+
+              {adSection && (
+                <div className="p-4">
+                  {showAdForm && (
+                    <div className="mb-6 p-4 bg-secondary/20 rounded-lg border border-border">
+                      <h3 className="font-bold mb-4">{editingAd ? "تعديل الإعلان" : "إضافة إعلان جديد"}</h3>
+                      <form onSubmit={handleAdSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>الموضع</Label>
+                            <select
+                              value={adForm.position}
+                              onChange={(e) => setAdForm({ ...adForm, position: e.target.value as "home" | "mod_detail" })}
+                              className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+                            >
+                              <option value="home">الصفحة الرئيسية</option>
+                              <option value="mod_detail">صفحة التعريب</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>العنوان (اختياري)</Label>
+                            <Input value={adForm.title} onChange={(e) => setAdForm({ ...adForm, title: e.target.value })} placeholder="عنوان الإعلان" className="bg-background" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>رابط صورة الإعلان *</Label>
+                          <Input required type="url" dir="ltr" value={adForm.imageUrl} onChange={(e) => setAdForm({ ...adForm, imageUrl: e.target.value })} placeholder="https://..." className="bg-background text-left" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>رابط الوجهة *</Label>
+                          <Input required type="url" dir="ltr" value={adForm.linkUrl} onChange={(e) => setAdForm({ ...adForm, linkUrl: e.target.value })} placeholder="https://..." className="bg-background text-left" />
+                        </div>
+                        {adForm.imageUrl && (
+                          <div className="h-20 w-full max-w-xs rounded overflow-hidden border border-border">
+                            <img src={adForm.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <input type="checkbox" id="isActive" checked={adForm.isActive} onChange={(e) => setAdForm({ ...adForm, isActive: e.target.checked })} className="w-4 h-4" />
+                          <Label htmlFor="isActive">نشط (مرئي للزوار)</Label>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <Button type="submit" disabled={createAd.isPending || updateAd.isPending}>
+                            {createAd.isPending || updateAd.isPending ? "جاري الحفظ..." : editingAd ? "حفظ التعديلات" : "إضافة الإعلان"}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => setShowAdForm(false)}>إلغاء</Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {isAdsLoading ? (
+                    <p className="text-center text-muted-foreground py-4">جاري التحميل...</p>
+                  ) : !ads?.length ? (
+                    <p className="text-center text-muted-foreground py-4">لا توجد إعلانات مضافة.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {ads.map((ad) => (
+                        <div key={ad.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background hover:bg-secondary/10">
+                          <div className="w-20 h-12 rounded overflow-hidden border border-border flex-shrink-0 bg-secondary/20">
+                            <img src={ad.imageUrl} alt="" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="font-medium text-sm truncate">{ad.title || "(بلا عنوان)"}</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-secondary text-muted-foreground flex items-center gap-1">
+                                {ad.position === "home" ? <Home className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                                {ad.position === "home" ? "الرئيسية" : "صفحة التعريب"}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate dir-ltr">{ad.linkUrl}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button type="button" title={ad.isActive ? "نشط – انقر لإيقاف" : "متوقف – انقر لتفعيل"} onClick={() => toggleAdActive(ad)} className={`transition-colors ${ad.isActive ? "text-primary" : "text-muted-foreground"}`}>
+                              {ad.isActive ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+                            </button>
+                            <Button variant="ghost" size="icon" onClick={() => openAdForm(ad)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         ) : (

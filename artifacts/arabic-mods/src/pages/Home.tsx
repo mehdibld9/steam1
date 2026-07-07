@@ -1,14 +1,15 @@
 import { Header } from "@/components/layout/Header"
-import { useListMods } from "@workspace/api-client-react"
+import { useListMods, getListModsQueryKey } from "@workspace/api-client-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Download, Eye, Search } from "lucide-react"
 import { Link } from "wouter"
 import { useState, useMemo } from "react"
+import { AdBanner } from "@/components/AdBanner"
 
 export default function Home() {
-  const { data: mods, isLoading } = useListMods({ query: { refetchOnWindowFocus: true } })
+  const { data: mods, isLoading } = useListMods({ query: { refetchOnWindowFocus: true, queryKey: getListModsQueryKey() } })
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredMods = useMemo(() => {
@@ -28,7 +29,7 @@ export default function Home() {
       <main className="flex-1 container mx-auto px-4 py-8">
 
         {/* Search bar */}
-        <div className="relative max-w-xl mx-auto mb-8">
+        <div className="relative max-w-xl mx-auto mb-4">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
             type="search"
@@ -37,6 +38,10 @@ export default function Home() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-10 bg-card border-border focus-visible:ring-primary"
           />
+        </div>
+
+        <div className="max-w-2xl mx-auto mb-6">
+          <AdBanner position="home" />
         </div>
 
         {isLoading ? (

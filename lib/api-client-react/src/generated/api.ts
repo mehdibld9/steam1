@@ -20,15 +20,17 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  AdminLoginBody,
-  AdminSetupBody,
+  Ad,
+  AdInput,
   AdminStatus,
   AdminVerifyResult,
   HealthStatus,
   Mod,
   ModInput,
   ModUpdate,
-  SiteStats
+  SetupAdminBody,
+  SiteStats,
+  VerifyAdminBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -144,7 +146,7 @@ export const getListModsUrl = () => {
 }
 
 /**
- * @summary List all translation mods
+ * @summary List all mods
  */
 export const listMods = async ( options?: RequestInit): Promise<Mod[]> => {
 
@@ -191,7 +193,7 @@ export type ListModsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all translation mods
+ * @summary List all mods
  */
 
 export function useListMods<TData = Awaited<ReturnType<typeof listMods>>, TError = ErrorType<unknown>>(
@@ -221,7 +223,7 @@ export const getCreateModUrl = () => {
 }
 
 /**
- * @summary Create a new translation mod (admin only)
+ * @summary Create mod (admin only)
  */
 export const createMod = async (modInput: ModInput, options?: RequestInit): Promise<Mod> => {
 
@@ -269,7 +271,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateModMutationError = ErrorType<void>
 
     /**
- * @summary Create a new translation mod (admin only)
+ * @summary Create mod (admin only)
  */
 export const useCreateMod = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMod>>, TError,{data: BodyType<ModInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -291,7 +293,7 @@ export const getGetModUrl = (id: number,) => {
 }
 
 /**
- * @summary Get a single mod and increment view count
+ * @summary Get a mod
  */
 export const getMod = async (id: number, options?: RequestInit): Promise<Mod> => {
 
@@ -338,7 +340,7 @@ export type GetModQueryError = ErrorType<void>
 
 
 /**
- * @summary Get a single mod and increment view count
+ * @summary Get a mod
  */
 
 export function useGetMod<TData = Awaited<ReturnType<typeof getMod>>, TError = ErrorType<void>>(
@@ -368,7 +370,7 @@ export const getUpdateModUrl = (id: number,) => {
 }
 
 /**
- * @summary Update a mod (admin only)
+ * @summary Update mod (admin only)
  */
 export const updateMod = async (id: number,
     modUpdate: ModUpdate, options?: RequestInit): Promise<Mod> => {
@@ -417,7 +419,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateModMutationError = ErrorType<void>
 
     /**
- * @summary Update a mod (admin only)
+ * @summary Update mod (admin only)
  */
 export const useUpdateMod = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMod>>, TError,{id: number;data: BodyType<ModUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -439,7 +441,7 @@ export const getDeleteModUrl = (id: number,) => {
 }
 
 /**
- * @summary Delete a mod (admin only)
+ * @summary Delete mod (admin only)
  */
 export const deleteMod = async (id: number, options?: RequestInit): Promise<void> => {
 
@@ -487,7 +489,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteModMutationError = ErrorType<void>
 
     /**
- * @summary Delete a mod (admin only)
+ * @summary Delete mod (admin only)
  */
 export const useDeleteMod = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMod>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -509,7 +511,7 @@ export const getTrackDownloadUrl = (id: number,) => {
 }
 
 /**
- * @summary Increment download count for a mod
+ * @summary Increment download count
  */
 export const trackDownload = async (id: number, options?: RequestInit): Promise<Mod> => {
 
@@ -557,7 +559,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type TrackDownloadMutationError = ErrorType<void>
 
     /**
- * @summary Increment download count for a mod
+ * @summary Increment download count
  */
 export const useTrackDownload = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackDownload>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -579,7 +581,7 @@ export const getGetAdminStatusUrl = () => {
 }
 
 /**
- * @summary Check if admin password has been set up
+ * @summary Check admin setup status
  */
 export const getAdminStatus = async ( options?: RequestInit): Promise<AdminStatus> => {
 
@@ -626,7 +628,7 @@ export type GetAdminStatusQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Check if admin password has been set up
+ * @summary Check admin setup status
  */
 
 export function useGetAdminStatus<TData = Awaited<ReturnType<typeof getAdminStatus>>, TError = ErrorType<unknown>>(
@@ -656,16 +658,16 @@ export const getSetupAdminUrl = () => {
 }
 
 /**
- * @summary Set up admin password for the first time (only works if no password set)
+ * @summary First-time admin setup
  */
-export const setupAdmin = async (adminSetupBody: AdminSetupBody, options?: RequestInit): Promise<AdminVerifyResult> => {
+export const setupAdmin = async (setupAdminBody: SetupAdminBody, options?: RequestInit): Promise<AdminVerifyResult> => {
 
   return customFetch<AdminVerifyResult>(getSetupAdminUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(adminSetupBody)
+    body: JSON.stringify(setupAdminBody)
   }
 );}
 
@@ -673,8 +675,8 @@ export const setupAdmin = async (adminSetupBody: AdminSetupBody, options?: Reque
 
 
 export const getSetupAdminMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<SetupAdminBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<SetupAdminBody>}, TContext> => {
 
 const mutationKey = ['setupAdmin'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -686,7 +688,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupAdmin>>, {data: BodyType<AdminSetupBody>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupAdmin>>, {data: BodyType<SetupAdminBody>}> = (props) => {
           const {data} = props ?? {};
 
           return  setupAdmin(data,requestOptions)
@@ -700,18 +702,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SetupAdminMutationResult = NonNullable<Awaited<ReturnType<typeof setupAdmin>>>
-    export type SetupAdminMutationBody = BodyType<AdminSetupBody>
+    export type SetupAdminMutationBody = BodyType<SetupAdminBody>
     export type SetupAdminMutationError = ErrorType<void>
 
     /**
- * @summary Set up admin password for the first time (only works if no password set)
+ * @summary First-time admin setup
  */
 export const useSetupAdmin = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<AdminSetupBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupAdmin>>, TError,{data: BodyType<SetupAdminBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof setupAdmin>>,
         TError,
-        {data: BodyType<AdminSetupBody>},
+        {data: BodyType<SetupAdminBody>},
         TContext
       > => {
       return useMutation(getSetupAdminMutationOptions(options));
@@ -726,16 +728,16 @@ export const getVerifyAdminUrl = () => {
 }
 
 /**
- * @summary Verify admin password
+ * @summary Verify admin credentials
  */
-export const verifyAdmin = async (adminLoginBody: AdminLoginBody, options?: RequestInit): Promise<AdminVerifyResult> => {
+export const verifyAdmin = async (verifyAdminBody: VerifyAdminBody, options?: RequestInit): Promise<AdminVerifyResult> => {
 
   return customFetch<AdminVerifyResult>(getVerifyAdminUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(adminLoginBody)
+    body: JSON.stringify(verifyAdminBody)
   }
 );}
 
@@ -743,8 +745,8 @@ export const verifyAdmin = async (adminLoginBody: AdminLoginBody, options?: Requ
 
 
 export const getVerifyAdminMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<VerifyAdminBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<VerifyAdminBody>}, TContext> => {
 
 const mutationKey = ['verifyAdmin'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -756,7 +758,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyAdmin>>, {data: BodyType<AdminLoginBody>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyAdmin>>, {data: BodyType<VerifyAdminBody>}> = (props) => {
           const {data} = props ?? {};
 
           return  verifyAdmin(data,requestOptions)
@@ -770,18 +772,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type VerifyAdminMutationResult = NonNullable<Awaited<ReturnType<typeof verifyAdmin>>>
-    export type VerifyAdminMutationBody = BodyType<AdminLoginBody>
+    export type VerifyAdminMutationBody = BodyType<VerifyAdminBody>
     export type VerifyAdminMutationError = ErrorType<void>
 
     /**
- * @summary Verify admin password
+ * @summary Verify admin credentials
  */
 export const useVerifyAdmin = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<AdminLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAdmin>>, TError,{data: BodyType<VerifyAdminBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof verifyAdmin>>,
         TError,
-        {data: BodyType<AdminLoginBody>},
+        {data: BodyType<VerifyAdminBody>},
         TContext
       > => {
       return useMutation(getVerifyAdminMutationOptions(options));
@@ -796,7 +798,7 @@ export const getGetStatsUrl = () => {
 }
 
 /**
- * @summary Get overall site statistics
+ * @summary Site statistics
  */
 export const getStats = async ( options?: RequestInit): Promise<SiteStats> => {
 
@@ -843,7 +845,7 @@ export type GetStatsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get overall site statistics
+ * @summary Site statistics
  */
 
 export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError = ErrorType<unknown>>(
@@ -863,4 +865,292 @@ export function useGetStats<TData = Awaited<ReturnType<typeof getStats>>, TError
 
 
 
+
+export const getListAdsUrl = () => {
+
+
+
+
+  return `/api/ads`
+}
+
+/**
+ * @summary List all ads
+ */
+export const listAds = async ( options?: RequestInit): Promise<Ad[]> => {
+
+  return customFetch<Ad[]>(getListAdsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdsQueryKey = () => {
+    return [
+    `/api/ads`
+    ] as const;
+    }
+
+
+export const getListAdsQueryOptions = <TData = Awaited<ReturnType<typeof listAds>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAds>>> = ({ signal }) => listAds({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdsQueryResult = NonNullable<Awaited<ReturnType<typeof listAds>>>
+export type ListAdsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all ads
+ */
+
+export function useListAds<TData = Awaited<ReturnType<typeof listAds>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdUrl = () => {
+
+
+
+
+  return `/api/ads`
+}
+
+/**
+ * @summary Create ad (admin only)
+ */
+export const createAd = async (adInput: AdInput, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getCreateAdUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adInput)
+  }
+);}
+
+
+
+
+export const getCreateAdMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{data: BodyType<AdInput>}, TContext> => {
+
+const mutationKey = ['createAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAd>>, {data: BodyType<AdInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAd(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdMutationResult = NonNullable<Awaited<ReturnType<typeof createAd>>>
+    export type CreateAdMutationBody = BodyType<AdInput>
+    export type CreateAdMutationError = ErrorType<void>
+
+    /**
+ * @summary Create ad (admin only)
+ */
+export const useCreateAd = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAd>>, TError,{data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAd>>,
+        TError,
+        {data: BodyType<AdInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdMutationOptions(options));
+    }
+
+export const getUpdateAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}`
+}
+
+/**
+ * @summary Update ad (admin only)
+ */
+export const updateAd = async (id: number,
+    adInput: AdInput, options?: RequestInit): Promise<Ad> => {
+
+  return customFetch<Ad>(getUpdateAdUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adInput)
+  }
+);}
+
+
+
+
+export const getUpdateAdMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext> => {
+
+const mutationKey = ['updateAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAd>>, {id: number;data: BodyType<AdInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAd(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdMutationResult = NonNullable<Awaited<ReturnType<typeof updateAd>>>
+    export type UpdateAdMutationBody = BodyType<AdInput>
+    export type UpdateAdMutationError = ErrorType<void>
+
+    /**
+ * @summary Update ad (admin only)
+ */
+export const useUpdateAd = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAd>>, TError,{id: number;data: BodyType<AdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAd>>,
+        TError,
+        {id: number;data: BodyType<AdInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdMutationOptions(options));
+    }
+
+export const getDeleteAdUrl = (id: number,) => {
+
+
+
+
+  return `/api/ads/${id}`
+}
+
+/**
+ * @summary Delete ad (admin only)
+ */
+export const deleteAd = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAd>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAd(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAd>>>
+
+    export type DeleteAdMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete ad (admin only)
+ */
+export const useDeleteAd = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAd>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAd>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdMutationOptions(options));
+    }
 

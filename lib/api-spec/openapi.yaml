@@ -1,6 +1,5 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
   description: Arabic Game Translations API
@@ -9,11 +8,8 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: mods
-    description: Translation mod operations
   - name: admin
-    description: Admin operations
 paths:
   /healthz:
     get:
@@ -32,7 +28,7 @@ paths:
     get:
       operationId: listMods
       tags: [mods]
-      summary: List all translation mods
+      summary: List all mods
       responses:
         "200":
           description: List of mods
@@ -42,11 +38,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Mod"
-
     post:
       operationId: createMod
       tags: [admin]
-      summary: Create a new translation mod (admin only)
+      summary: Create mod (admin only)
       requestBody:
         required: true
         content:
@@ -55,7 +50,7 @@ paths:
               $ref: "#/components/schemas/ModInput"
       responses:
         "201":
-          description: Created mod
+          description: Created
           content:
             application/json:
               schema:
@@ -67,7 +62,7 @@ paths:
     get:
       operationId: getMod
       tags: [mods]
-      summary: Get a single mod and increment view count
+      summary: Get a mod
       parameters:
         - name: id
           in: path
@@ -76,18 +71,17 @@ paths:
             type: integer
       responses:
         "200":
-          description: Mod details
+          description: Mod detail
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Mod"
         "404":
           description: Not found
-
     put:
       operationId: updateMod
       tags: [admin]
-      summary: Update a mod (admin only)
+      summary: Update mod (admin only)
       parameters:
         - name: id
           in: path
@@ -102,7 +96,7 @@ paths:
               $ref: "#/components/schemas/ModUpdate"
       responses:
         "200":
-          description: Updated mod
+          description: Updated
           content:
             application/json:
               schema:
@@ -111,11 +105,10 @@ paths:
           description: Unauthorized
         "404":
           description: Not found
-
     delete:
       operationId: deleteMod
       tags: [admin]
-      summary: Delete a mod (admin only)
+      summary: Delete mod (admin only)
       parameters:
         - name: id
           in: path
@@ -134,7 +127,7 @@ paths:
     post:
       operationId: trackDownload
       tags: [mods]
-      summary: Increment download count for a mod
+      summary: Increment download count
       parameters:
         - name: id
           in: path
@@ -143,7 +136,7 @@ paths:
             type: integer
       responses:
         "200":
-          description: Download tracked
+          description: Updated mod
           content:
             application/json:
               schema:
@@ -155,10 +148,10 @@ paths:
     get:
       operationId: getAdminStatus
       tags: [admin]
-      summary: Check if admin password has been set up
+      summary: Check admin setup status
       responses:
         "200":
-          description: Admin setup status
+          description: Status
           content:
             application/json:
               schema:
@@ -168,34 +161,34 @@ paths:
     post:
       operationId: setupAdmin
       tags: [admin]
-      summary: Set up admin password for the first time (only works if no password set)
+      summary: First-time admin setup
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdminSetupBody"
+              $ref: "#/components/schemas/SetupAdminBody"
       responses:
         "200":
-          description: Admin password set successfully
+          description: Setup complete
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminVerifyResult"
         "409":
-          description: Admin already set up
+          description: Already set up
 
   /admin/verify:
     post:
       operationId: verifyAdmin
       tags: [admin]
-      summary: Verify admin password
+      summary: Verify admin credentials
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdminLoginBody"
+              $ref: "#/components/schemas/VerifyAdminBody"
       responses:
         "200":
           description: Verified
@@ -210,35 +203,107 @@ paths:
     get:
       operationId: getStats
       tags: [mods]
-      summary: Get overall site statistics
+      summary: Site statistics
       responses:
         "200":
-          description: Site stats
+          description: Stats
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteStats"
 
+  /ads:
+    get:
+      operationId: listAds
+      tags: [admin]
+      summary: List all ads
+      responses:
+        "200":
+          description: List of ads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ad"
+    post:
+      operationId: createAd
+      tags: [admin]
+      summary: Create ad (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ad"
+        "401":
+          description: Unauthorized
+
+  /ads/{id}:
+    put:
+      operationId: updateAd
+      tags: [admin]
+      summary: Update ad (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ad"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteAd
+      tags: [admin]
+      summary: Delete ad (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
     Mod:
       type: object
-      required:
-        - id
-        - title
-        - gameName
-        - downloadCount
-        - viewCount
-        - createdAt
-        - updatedAt
+      required: [id, title, gameName, downloadCount, viewCount, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -273,9 +338,7 @@ components:
 
     ModInput:
       type: object
-      required:
-        - title
-        - gameName
+      required: [title, gameName]
       properties:
         title:
           type: string
@@ -328,17 +391,14 @@ components:
 
     AdminStatus:
       type: object
-      required:
-        - isSetup
+      required: [isSetup]
       properties:
         isSetup:
           type: boolean
 
-    AdminSetupBody:
+    SetupAdminBody:
       type: object
-      required:
-        - username
-        - password
+      required: [username, password]
       properties:
         username:
           type: string
@@ -347,11 +407,9 @@ components:
           type: string
           minLength: 6
 
-    AdminLoginBody:
+    VerifyAdminBody:
       type: object
-      required:
-        - username
-        - password
+      required: [username, password]
       properties:
         username:
           type: string
@@ -360,18 +418,14 @@ components:
 
     AdminVerifyResult:
       type: object
-      required:
-        - success
+      required: [success]
       properties:
         success:
           type: boolean
 
     SiteStats:
       type: object
-      required:
-        - totalMods
-        - totalDownloads
-        - totalViews
+      required: [totalMods, totalDownloads, totalViews]
       properties:
         totalMods:
           type: integer
@@ -379,3 +433,40 @@ components:
           type: integer
         totalViews:
           type: integer
+
+    Ad:
+      type: object
+      required: [id, imageUrl, linkUrl, position, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: ["string", "null"]
+        imageUrl:
+          type: string
+        linkUrl:
+          type: string
+        position:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AdInput:
+      type: object
+      required: [imageUrl, linkUrl, position]
+      properties:
+        title:
+          type: string
+        imageUrl:
+          type: string
+        linkUrl:
+          type: string
+        position:
+          type: string
+          enum: [home, mod_detail]
+        isActive:
+          type: boolean

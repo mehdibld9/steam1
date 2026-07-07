@@ -17,7 +17,7 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * @summary List all translation mods
+ * @summary List all mods
  */
 export const ListModsResponseItem = zod.object({
   "id": zod.number(),
@@ -39,7 +39,7 @@ export const ListModsResponse = zod.array(ListModsResponseItem)
 
 
 /**
- * @summary Create a new translation mod (admin only)
+ * @summary Create mod (admin only)
  */
 
 
@@ -76,7 +76,7 @@ export const CreateModResponse = zod.object({
 
 
 /**
- * @summary Get a single mod and increment view count
+ * @summary Get a mod
  */
 export const GetModParams = zod.object({
   "id": zod.coerce.number()
@@ -101,7 +101,7 @@ export const GetModResponse = zod.object({
 
 
 /**
- * @summary Update a mod (admin only)
+ * @summary Update mod (admin only)
  */
 export const UpdateModParams = zod.object({
   "id": zod.coerce.number()
@@ -142,7 +142,7 @@ export const UpdateModResponse = zod.object({
 
 
 /**
- * @summary Delete a mod (admin only)
+ * @summary Delete mod (admin only)
  */
 export const DeleteModParams = zod.object({
   "id": zod.coerce.number()
@@ -152,7 +152,7 @@ export const DeleteModResponse = zod.void()
 
 
 /**
- * @summary Increment download count for a mod
+ * @summary Increment download count
  */
 export const TrackDownloadParams = zod.object({
   "id": zod.coerce.number()
@@ -177,7 +177,7 @@ export const TrackDownloadResponse = zod.object({
 
 
 /**
- * @summary Check if admin password has been set up
+ * @summary Check admin setup status
  */
 export const GetAdminStatusResponse = zod.object({
   "isSetup": zod.boolean()
@@ -185,7 +185,7 @@ export const GetAdminStatusResponse = zod.object({
 
 
 /**
- * @summary Set up admin password for the first time (only works if no password set)
+ * @summary First-time admin setup
  */
 
 export const setupAdminBodyPasswordMin = 6;
@@ -203,7 +203,7 @@ export const SetupAdminResponse = zod.object({
 
 
 /**
- * @summary Verify admin password
+ * @summary Verify admin credentials
  */
 export const VerifyAdminBody = zod.object({
   "username": zod.string(),
@@ -216,12 +216,88 @@ export const VerifyAdminResponse = zod.object({
 
 
 /**
- * @summary Get overall site statistics
+ * @summary Site statistics
  */
 export const GetStatsResponse = zod.object({
   "totalMods": zod.number(),
   "totalDownloads": zod.number(),
   "totalViews": zod.number()
 })
+
+
+/**
+ * @summary List all ads
+ */
+export const ListAdsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string().nullish(),
+  "imageUrl": zod.string(),
+  "linkUrl": zod.string(),
+  "position": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAdsResponse = zod.array(ListAdsResponseItem)
+
+
+/**
+ * @summary Create ad (admin only)
+ */
+export const CreateAdBody = zod.object({
+  "title": zod.string().optional(),
+  "imageUrl": zod.string(),
+  "linkUrl": zod.string(),
+  "position": zod.enum(['home', 'mod_detail']),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateAdResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string().nullish(),
+  "imageUrl": zod.string(),
+  "linkUrl": zod.string(),
+  "position": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update ad (admin only)
+ */
+export const UpdateAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAdBody = zod.object({
+  "title": zod.string().optional(),
+  "imageUrl": zod.string(),
+  "linkUrl": zod.string(),
+  "position": zod.enum(['home', 'mod_detail']),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateAdResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string().nullish(),
+  "imageUrl": zod.string(),
+  "linkUrl": zod.string(),
+  "position": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete ad (admin only)
+ */
+export const DeleteAdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAdResponse = zod.void()
 
 

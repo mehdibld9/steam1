@@ -65,14 +65,14 @@ export interface AdminStatus {
   isSetup: boolean;
 }
 
-export interface AdminSetupBody {
+export interface SetupAdminBody {
   /** @minLength 1 */
   username: string;
   /** @minLength 6 */
   password: string;
 }
 
-export interface AdminLoginBody {
+export interface VerifyAdminBody {
   username: string;
   password: string;
 }
@@ -85,5 +85,33 @@ export interface SiteStats {
   totalMods: number;
   totalDownloads: number;
   totalViews: number;
+}
+
+export interface Ad {
+  id: number;
+  /** @nullable */
+  title?: string | null;
+  imageUrl: string;
+  linkUrl: string;
+  position: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdInputPosition = typeof AdInputPosition[keyof typeof AdInputPosition];
+
+
+export const AdInputPosition = {
+  home: 'home',
+  mod_detail: 'mod_detail',
+} as const;
+
+export interface AdInput {
+  title?: string;
+  imageUrl: string;
+  linkUrl: string;
+  position: AdInputPosition;
+  isActive?: boolean;
 }
 

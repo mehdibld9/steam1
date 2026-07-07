@@ -1,0 +1,3 @@
+- [Orval codegen zod conflict](orval-zod-conflict.md) — removing `schemas` from orval zod config fixes duplicate-export TS error
+- [Zod in api-server routes](zod-in-api-server.md) — api-server has no zod dep; import Zod schemas from @workspace/api-zod instead
+- [Orval codegen queryKey required](orval-querykey-required.md) — generated hooks now require explicit queryKey in query options

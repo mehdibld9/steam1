@@ -1,10 +1,10 @@
 import { Header } from "@/components/layout/Header"
-import { useGetMod, useTrackDownload, getGetModQueryKey, getListModsQueryKey } from "@workspace/api-client-react"
+import { useGetMod, getGetModQueryKey } from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button"
-import { Download, Eye, ArrowRight, ArrowLeft, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
+import { Download, Eye, ArrowRight, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { Link, useParams } from "wouter"
-import { useQueryClient } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { AdBanner } from "@/components/AdBanner"
 
 export default function ModDetail() {
   const { id } = useParams()
@@ -12,11 +12,8 @@ export default function ModDetail() {
   const { data: mod, isLoading, isError } = useGetMod(modId, {
     query: { enabled: !!modId, queryKey: getGetModQueryKey(modId) }
   })
-  const trackDownload = useTrackDownload()
-  const queryClient = useQueryClient()
   const [imgIndex, setImgIndex] = useState(0)
 
-  // Build the full images array: cover + extra
   const allImages = useMemo(() => {
     const imgs: string[] = []
     if (mod?.imageUrl) imgs.push(mod.imageUrl)
@@ -28,19 +25,6 @@ export default function ModDetail() {
 
   const hasPrev = imgIndex > 0
   const hasNext = imgIndex < allImages.length - 1
-
-  const handleDownloadClick = (url: string) => {
-    trackDownload.mutate(
-      { id: modId },
-      {
-        onSuccess: (updatedMod) => {
-          queryClient.setQueryData(getGetModQueryKey(modId), updatedMod)
-          queryClient.invalidateQueries({ queryKey: getListModsQueryKey() })
-        }
-      }
-    )
-    window.open(url, "_blank")
-  }
 
   if (isLoading) {
     return (
@@ -190,31 +174,36 @@ export default function ModDetail() {
               )}
 
               <div className="border-t border-border pt-8">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <Download className="w-5 h-5 text-primary" />
                   روابط التحميل
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <AdBanner position="mod_detail" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   {mod.download1Url && (
-                    <Button
-                      size="lg"
-                      className="w-full h-14 text-lg justify-between px-6"
-                      onClick={() => handleDownloadClick(mod.download1Url!)}
-                    >
-                      {mod.download1Label || "تحميل مباشر"}
-                      <ExternalLink className="w-5 h-5" />
-                    </Button>
+                    <Link href={`/download/${mod.id}/1`}>
+                      <Button
+                        size="lg"
+                        className="w-full h-14 text-lg justify-between px-6"
+                      >
+                        {mod.download1Label || "تحميل مباشر"}
+                        <ExternalLink className="w-5 h-5" />
+                      </Button>
+                    </Link>
                   )}
                   {mod.download2Url && (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="w-full h-14 text-lg justify-between px-6 border-primary/50 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                      onClick={() => handleDownloadClick(mod.download2Url!)}
-                    >
-                      {mod.download2Label || "رابط بديل"}
-                      <ExternalLink className="w-5 h-5" />
-                    </Button>
+                    <Link href={`/download/${mod.id}/2`}>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full h-14 text-lg justify-between px-6 border-primary/50 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                      >
+                        {mod.download2Label || "رابط بديل"}
+                        <ExternalLink className="w-5 h-5" />
+                      </Button>
+                    </Link>
                   )}
                   {!mod.download1Url && !mod.download2Url && (
                     <div className="col-span-full text-center p-6 border border-dashed border-border rounded-lg text-muted-foreground">

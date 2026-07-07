@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm run vercel:build",
+  "outputDirectory": "artifacts/arabic-mods/dist/public",
+  "functions": {
+    "api/index.ts": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ],
+  "env": {
+    "BASE_PATH": "/"
+  }
+}

@@ -16,7 +16,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/mod/:id" component={ModDetail} />
       <Route path="/download/:id/:which" component={DownloadPage} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/backstage-x7q2" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "buildCommand": "pnpm -w run vercel:build",
-  "outputDirectory": "artifacts/arabic-mods/dist/public",
+  "outputDirectory": "public",
   "functions": {
     "api/index.ts": {
       "memory": 512,

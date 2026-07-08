@@ -1,19 +1,5 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": "pnpm -w run vercel:build",
-  "outputDirectory": "public",
-  "functions": {
-    "api/index.ts": {
-      "memory": 512,
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!api).*)", "destination": "/index.html" }
-  ],
-  "env": {
-    "BASE_PATH": "/"
-  }
+  "buildCommand": "pnpm -w run vercel:build"
 }

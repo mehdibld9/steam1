@@ -3,6 +3,7 @@
 # compiled output
 dist
 /public
+/.vercel/output
 tmp
 out-tsc
 *.tsbuildinfo

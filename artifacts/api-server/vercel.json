@@ -1,4 +1,5 @@
 {
+  "framework": null,
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm --filter @workspace/api-spec run codegen && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/arabic-mods run build && cp -r artifacts/arabic-mods/dist/public artifacts/api-server/dist/",
   "outputDirectory": "dist/public",

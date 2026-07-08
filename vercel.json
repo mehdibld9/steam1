@@ -1,6 +1,14 @@
 {
-  "version": 2,
-  "framework": null,
-  "buildCommand": "pnpm -w run vercel:build",
-  "outputDirectory": ".vercel/output/static"
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/api-spec run codegen && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/arabic-mods run build",
+  "outputDirectory": "artifacts/arabic-mods/dist/public",
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

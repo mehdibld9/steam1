@@ -1,5 +1,6 @@
 {
   "version": 2,
   "framework": null,
-  "buildCommand": "pnpm -w run vercel:build"
+  "buildCommand": "pnpm -w run vercel:build",
+  "outputDirectory": ".vercel/output/static"
 }

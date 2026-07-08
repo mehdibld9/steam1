@@ -7,7 +7,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "vercel:build": "pnpm --filter @workspace/api-spec run codegen && pnpm --filter @workspace/arabic-mods run build && rm -rf public && cp -r artifacts/arabic-mods/dist/public public"
+    "vercel:build": "pnpm --filter @workspace/api-spec run codegen && pnpm --filter @workspace/arabic-mods run build"
   },
   "private": true,
   "devDependencies": {

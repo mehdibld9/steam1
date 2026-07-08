@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run vercel:build",
+  "buildCommand": "pnpm -w run vercel:build",
   "outputDirectory": "artifacts/arabic-mods/dist/public",
   "functions": {
     "api/index.ts": {

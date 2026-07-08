@@ -33,11 +33,12 @@ CREATE TABLE IF NOT EXISTS ads (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Admin settings table (stores hashed admin credentials)
+-- Admin settings table (stores hashed admin credentials + site settings)
 CREATE TABLE IF NOT EXISTS admin_settings (
   id             SERIAL PRIMARY KEY,
   username       TEXT NOT NULL,
   password_hash  TEXT NOT NULL,
+  contact_url    TEXT,                              -- shown as "تواصل معنا" link in header
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

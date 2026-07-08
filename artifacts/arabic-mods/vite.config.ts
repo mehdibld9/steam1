@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-// PORT is required for dev/preview but not for production builds (e.g. Vercel).
+// PORT is required for dev/preview but not for production builds.
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const basePath = process.env.BASE_PATH ?? '/';
 

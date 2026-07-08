@@ -5,10 +5,6 @@ version = "1.0.0"
 id = "artifacts/arabic-mods"
 router = "path"
 
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
-
 [[services]]
 name = "web"
 paths = [ "/" ]
@@ -19,8 +15,8 @@ run = "pnpm --filter @workspace/arabic-mods run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/arabic-mods", "run", "build" ]
-publicDir = "artifacts/arabic-mods/dist/public"
 serve = "static"
+publicDir = "artifacts/arabic-mods/dist/public"
 
 [[services.production.rewrites]]
 from = "/*"

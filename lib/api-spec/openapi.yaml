@@ -246,6 +246,38 @@ paths:
         "401":
           description: Unauthorized
 
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [admin]
+      summary: Get site settings
+      responses:
+        "200":
+          description: Site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+    put:
+      operationId: updateSettings
+      tags: [admin]
+      summary: Update site settings (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteSettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+        "401":
+          description: Unauthorized
+
   /ads/{id}:
     put:
       operationId: updateAd
@@ -470,3 +502,16 @@ components:
           enum: [home, mod_detail]
         isActive:
           type: boolean
+
+    SiteSettings:
+      type: object
+      required: [contactUrl]
+      properties:
+        contactUrl:
+          type: ["string", "null"]
+
+    SiteSettingsInput:
+      type: object
+      properties:
+        contactUrl:
+          type: string

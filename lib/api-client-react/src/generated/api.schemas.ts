@@ -115,3 +115,12 @@ export interface AdInput {
   isActive?: boolean;
 }
 
+export interface SiteSettings {
+  /** @nullable */
+  contactUrl: string | null;
+}
+
+export interface SiteSettingsInput {
+  contactUrl?: string;
+}
+

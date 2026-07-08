@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/Header"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   useVerifyAdmin, useSetupAdmin, useGetAdminStatus,
   useListMods, useDeleteMod, useCreateMod, useUpdateMod,
   useGetStats, getListModsQueryKey, getGetStatsQueryKey,
   useListAds, useCreateAd, useUpdateAd, useDeleteAd,
-  getListAdsQueryKey
+  getListAdsQueryKey,
+  useGetSettings, useUpdateSettings, getGetSettingsQueryKey,
 } from "@workspace/api-client-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQueryClient } from "@tanstack/react-query"
-import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus, KeyRound, Megaphone, Globe, Home, ToggleLeft, ToggleRight } from "lucide-react"
+import { Edit, Trash2, Plus, LogOut, ArrowRight, BarChart3, Gamepad2, Download, Eye, X, ImagePlus, KeyRound, Megaphone, Globe, Home, ToggleLeft, ToggleRight, Settings, Mail } from "lucide-react"
 import type { Mod, Ad } from "@workspace/api-client-react"
 import { Link } from "wouter"
 
@@ -60,6 +61,11 @@ export default function Admin() {
   const [adForm, setAdForm] = useState({ title: "", imageUrl: "", linkUrl: "", position: "home" as "home" | "mod_detail", isActive: true })
   const [showAdForm, setShowAdForm] = useState(false)
 
+  // Settings state
+  const [settingsSection, setSettingsSection] = useState(false)
+  const [contactUrlInput, setContactUrlInput] = useState("")
+  const [settingsSaved, setSettingsSaved] = useState(false)
+
   const adminHeader = { headers: { "x-admin-password": password } }
 
   const { data: adminStatus, isLoading: isStatusLoading } = useGetAdminStatus()
@@ -81,6 +87,10 @@ export default function Admin() {
   const createAd = useCreateAd({ request: adminHeader })
   const updateAd = useUpdateAd({ request: adminHeader })
   const deleteAd = useDeleteAd({ request: adminHeader })
+  const { data: settingsData } = useGetSettings({
+    query: { enabled: isAuthenticated, queryKey: getGetSettingsQueryKey() }
+  })
+  const updateSettings = useUpdateSettings({ request: adminHeader })
   const queryClient = useQueryClient()
 
   const handleSetup = (e: React.FormEvent) => {
@@ -147,6 +157,27 @@ export default function Admin() {
       setAdForm({ title: "", imageUrl: "", linkUrl: "", position: "home", isActive: true })
     }
     setShowAdForm(true)
+  }
+
+  // Sync settingsData into the input when loaded
+  useEffect(() => {
+    if (settingsData !== undefined) {
+      setContactUrlInput(settingsData.contactUrl ?? "")
+    }
+  }, [settingsData])
+
+  const handleSettingsSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    updateSettings.mutate(
+      { data: { contactUrl: contactUrlInput.trim() || undefined } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey() })
+          setSettingsSaved(true)
+          setTimeout(() => setSettingsSaved(false), 2500)
+        }
+      }
+    )
   }
 
   const handleAdSubmit = (e: React.FormEvent) => {
@@ -603,6 +634,62 @@ export default function Admin() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* ─── Site Settings ─────────────────────────────────────────── */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mt-8">
+              <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
+                <button
+                  type="button"
+                  className="font-bold text-lg flex items-center gap-2 hover:text-primary transition-colors"
+                  onClick={() => setSettingsSection((v) => !v)}
+                >
+                  <Settings className="w-5 h-5 text-primary" />
+                  إعدادات الموقع
+                  <span className="text-muted-foreground text-sm">{settingsSection ? "▲" : "▼"}</span>
+                </button>
+              </div>
+
+              {settingsSection && (
+                <div className="p-4">
+                  <form onSubmit={handleSettingsSave} className="space-y-4 max-w-lg">
+                    <div className="space-y-2">
+                      <Label htmlFor="contactUrl" className="flex items-center gap-2 font-bold">
+                        <Mail className="w-4 h-4 text-primary" />
+                        رابط صفحة التواصل
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        يظهر في شريط التنقل كزر "تواصل معنا". يمكن أن يكون رابط واتساب، تيليجرام، نموذج اتصال، إلخ.
+                      </p>
+                      <Input
+                        id="contactUrl"
+                        type="url"
+                        dir="ltr"
+                        value={contactUrlInput}
+                        onChange={(e) => setContactUrlInput(e.target.value)}
+                        placeholder="https://t.me/yourhandle أو https://wa.me/..."
+                        className="bg-background text-left"
+                      />
+                      {contactUrlInput && (
+                        <p className="text-xs text-muted-foreground">
+                          معاينة:{" "}
+                          <a href={contactUrlInput} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+                            {contactUrlInput}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button type="submit" disabled={updateSettings.isPending}>
+                        {updateSettings.isPending ? "جاري الحفظ..." : "حفظ الإعدادات"}
+                      </Button>
+                      {settingsSaved && (
+                        <span className="text-sm text-primary font-medium">✓ تم الحفظ</span>
+                      )}
+                    </div>
+                  </form>
                 </div>
               )}
             </div>

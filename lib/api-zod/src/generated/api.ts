@@ -265,6 +265,26 @@ export const CreateAdResponse = zod.object({
 
 
 /**
+ * @summary Get site settings
+ */
+export const GetSettingsResponse = zod.object({
+  "contactUrl": zod.string().nullable()
+})
+
+
+/**
+ * @summary Update site settings (admin only)
+ */
+export const UpdateSettingsBody = zod.object({
+  "contactUrl": zod.string().optional()
+})
+
+export const UpdateSettingsResponse = zod.object({
+  "contactUrl": zod.string().nullable()
+})
+
+
+/**
  * @summary Update ad (admin only)
  */
 export const UpdateAdParams = zod.object({
